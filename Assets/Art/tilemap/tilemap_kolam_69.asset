@@ -1,0 +1,23 @@
+#if UNITY_EDITOR && UNITY_INPUT_SYSTEM_UI_TK_ASSET_EDITOR
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.Editor.Lists;
+using UnityEngine.InputSystem.Layouts;
+using UnityEngine.InputSystem.Utilities;
+
+namespace UnityEngine.InputSystem.Editor
+{
+    internal static partial class Selectors
+    {
+        public static IEnumerable<string> GetActionMapNames(InputActionsEditorState state)
+        {
+            return state.serializedObject
+                ?.FindProperty(nameof(InputActionAsset.m_ActionMaps))
+                ?.Select(m => m.FindPropertyRelative(nameof(InputActionMap.m_Name))?.stringValue)
+                ?? Enumerable.Empty<string>();
+        }
+
+        pu
