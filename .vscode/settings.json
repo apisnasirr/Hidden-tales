@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Hidden tales.sln"
+    "dotnet.defaultSolution": "Hidden-tales.sln"
 }
