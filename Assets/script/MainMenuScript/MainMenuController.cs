@@ -6,13 +6,13 @@ public class MainMenuController : MonoBehaviour
 {
     [Header("Panels")]
     [SerializeField] private GameObject settingsPanel;
-    [SerializeField] private GameObject levelSelectPanel;
 
     [Header("Sliders")]
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider sfxSlider;
 
     [Header("Scene Names")]
+    [SerializeField] private string levelSelectSceneName = "LevelSelectScene"; // Your new scene!
     [SerializeField] private string bandarSceneName = "Bandar";
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string runcitSceneName = "Kedai Runcit";
@@ -26,9 +26,6 @@ public class MainMenuController : MonoBehaviour
 
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
-
-        if (levelSelectPanel != null)
-            levelSelectPanel.SetActive(false);
 
         SetupSliders();
         LoadVolumeSettings();
@@ -60,6 +57,7 @@ public class MainMenuController : MonoBehaviour
         float savedMusic = PlayerPrefs.GetFloat(MusicVolumeKey, 1f);
         float savedSFX = PlayerPrefs.GetFloat(SFXVolumeKey, 1f);
 
+        // Updated to use the correct GetMusicVolume() from your BGMManager
         if (BGMManager.Instance != null)
             savedMusic = BGMManager.Instance.GetMusicVolume();
 
@@ -79,17 +77,8 @@ public class MainMenuController : MonoBehaviour
     public void OpenLevelSelect()
     {
         PlayButtonSFX();
-
-        if (levelSelectPanel != null)
-            levelSelectPanel.SetActive(true);
-    }
-
-    public void CloseLevelSelect()
-    {
-        PlayButtonSFX();
-
-        if (levelSelectPanel != null)
-            levelSelectPanel.SetActive(false);
+        // Now it loads the new scene instead of opening a panel!
+        LoadSceneWithLoading(levelSelectSceneName);
     }
 
     public void LoadBandar()
@@ -119,9 +108,6 @@ public class MainMenuController : MonoBehaviour
             settingsPanel.SetActive(true);
             settingsPanel.transform.SetAsLastSibling();
         }
-
-        if (BGMManager.Instance != null)
-            BGMManager.Instance.PauseBGM();
     }
 
     public void CloseSettings()

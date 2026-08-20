@@ -5,23 +5,37 @@ public class AudioSettingsUI : MonoBehaviour
 {
     [Header("UI")]
     [SerializeField] private Slider sfxSlider;
+    [SerializeField] private Slider bgmSlider; // Make sure to assign this in the Inspector!
 
     private bool isInitialized = false;
 
     private void Start()
     {
-        if (sfxSlider == null)
-            return;
+        // 1. Initialize SFX Slider
+        if (sfxSlider != null)
+        {
+            float savedSfxVolume = 1f;
+            if (SFXManager.Instance != null)
+                savedSfxVolume = SFXManager.Instance.GetSFXVolume();
+            else
+                savedSfxVolume = PlayerPrefs.GetFloat("SFX_VOLUME", 1f);
 
-        float savedVolume = 1f;
+            sfxSlider.SetValueWithoutNotify(savedSfxVolume);
+            sfxSlider.onValueChanged.AddListener(OnSFXSliderChanged);
+        }
 
-        if (SFXManager.Instance != null)
-            savedVolume = SFXManager.Instance.GetSFXVolume();
-        else
-            savedVolume = PlayerPrefs.GetFloat("SFX_VOLUME", 1f);
+        // 2. Initialize BGM Slider (Using your exact method names!)
+        if (bgmSlider != null)
+        {
+            float savedBgmVolume = 1f;
+            if (BGMManager.Instance != null) 
+                savedBgmVolume = BGMManager.Instance.GetMusicVolume();
+            else
+                savedBgmVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
 
-        sfxSlider.SetValueWithoutNotify(savedVolume);
-        sfxSlider.onValueChanged.AddListener(OnSFXSliderChanged);
+            bgmSlider.SetValueWithoutNotify(savedBgmVolume);
+            bgmSlider.onValueChanged.AddListener(OnBGMSliderChanged);
+        }
 
         isInitialized = true;
     }
@@ -30,16 +44,24 @@ public class AudioSettingsUI : MonoBehaviour
     {
         if (sfxSlider != null)
             sfxSlider.onValueChanged.RemoveListener(OnSFXSliderChanged);
+        
+        if (bgmSlider != null)
+            bgmSlider.onValueChanged.RemoveListener(OnBGMSliderChanged);
     }
 
     public void OnSFXSliderChanged(float value)
     {
-        if (!isInitialized)
-            return;
+        if (!isInitialized) return;
 
         if (SFXManager.Instance != null)
             SFXManager.Instance.SetSFXVolume(value);
+    }
 
-        Debug.Log("Slider ubah SFX volume ke: " + value);
+    public void OnBGMSliderChanged(float value)
+    {
+        if (!isInitialized) return;
+
+        if (BGMManager.Instance != null)
+            BGMManager.Instance.SetMusicVolume(value);
     }
 }

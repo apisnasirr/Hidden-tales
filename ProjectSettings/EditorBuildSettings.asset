@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Kedai Runcit.unity
     guid: da76a01560ce86845b59f042482875eb
+  - enabled: 1
+    path: Assets/Scenes/LevelSelectScene.unity
+    guid: af9db3b38c08c7e449318e55ff835563
   m_configObjects: {}
