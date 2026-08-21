@@ -80,8 +80,8 @@ public class SettingsManagerRuncit : MonoBehaviour
         if (settingsPanel != null)
             settingsPanel.SetActive(true);
 
-        if (BGMManager.Instance != null)
-            BGMManager.Instance.PauseBGM();
+        //if (BGMManager.Instance != null)
+        //    BGMManager.Instance.PauseBGM()
 
         PlayButtonSFX();
 
@@ -95,8 +95,8 @@ public class SettingsManagerRuncit : MonoBehaviour
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
 
-        if (BGMManager.Instance != null)
-            BGMManager.Instance.ResumeBGM();
+        //if (BGMManager.Instance != null)
+        //    BGMManager.Instance.ResumeBGM();
 
         PlayButtonSFX();
 
@@ -111,7 +111,7 @@ public class SettingsManagerRuncit : MonoBehaviour
     public void GoToBandar()
     {
         IgnoreNextWrongClick = true;
-        PlayButtonSFX();
+        PlayButtonSFX(); 
         LoadSceneWithLoading(bandarSceneName);
     }
 
@@ -188,3 +188,4 @@ public class SettingsManagerRuncit : MonoBehaviour
             SFXManager.Instance.PlayButtonClick();
     }
 }
+

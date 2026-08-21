@@ -86,8 +86,8 @@ public class SettingsManagerBandar : MonoBehaviour
         settingsPanel.SetActive(true);
         settingsPanel.transform.SetAsLastSibling();
 
-        if (BGMManager.Instance != null)
-            BGMManager.Instance.PauseBGM();
+        //if (BGMManager.Instance != null)
+        //    BGMManager.Instance.PauseBGM();
 
         PlayButtonSFX();
 
@@ -101,8 +101,8 @@ public class SettingsManagerBandar : MonoBehaviour
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
 
-        if (BGMManager.Instance != null)
-            BGMManager.Instance.ResumeBGM();
+        //if (BGMManager.Instance != null)
+        //    BGMManager.Instance.ResumeBGM();
 
         PlayButtonSFX();
 

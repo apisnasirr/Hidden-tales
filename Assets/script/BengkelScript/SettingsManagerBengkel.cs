@@ -80,8 +80,8 @@ public class SettingsManagerBengkel : MonoBehaviour
         if (settingsPanel != null)
             settingsPanel.SetActive(true);
 
-        if (BGMManager.Instance != null)
-            BGMManager.Instance.PauseBGM();
+        //if (BGMManager.Instance != null)
+        //    BGMManager.Instance.PauseBGM();
 
         PlayButtonSFX();
 
@@ -95,8 +95,8 @@ public class SettingsManagerBengkel : MonoBehaviour
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
 
-        if (BGMManager.Instance != null)
-            BGMManager.Instance.ResumeBGM();
+        //if (BGMManager.Instance != null)
+        //    BGMManager.Instance.ResumeBGM();
 
         PlayButtonSFX();
 
