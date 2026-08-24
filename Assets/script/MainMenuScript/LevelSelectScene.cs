@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 public class LevelSelectController : MonoBehaviour
 {
     [Header("Scene Names")]
-    [SerializeField] private string mainMenuSceneName = "Main Menu"; // Make sure this matches your exact Main Menu scene name!
+    [SerializeField] private string mainMenuSceneName = "Main Menu"; 
     [SerializeField] private string bandarSceneName = "Bandar";
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string runcitSceneName = "Kedai Runcit";
@@ -37,6 +37,7 @@ public class LevelSelectController : MonoBehaviour
     {
         Time.timeScale = 1f;
 
+        
         if (LoadingScreenManager.Instance != null)
             LoadingScreenManager.Instance.LoadScene(sceneName);
         else
@@ -46,6 +47,7 @@ public class LevelSelectController : MonoBehaviour
     private void PlayButtonSFX()
     {
         if (SFXManager.Instance != null)
-            SFXManager.Instance.PlayButtonClick();
+            SFXManager.Instance.PlayButtonClick(); 
     }
 }
+
