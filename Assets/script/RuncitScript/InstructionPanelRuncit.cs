@@ -8,21 +8,8 @@ public class InstructionPanelRuncit : MonoBehaviour
     [SerializeField] private CanvasGroup instructionCanvasGroup;
 
     [Header("Timing")]
-    [SerializeField] private float hideAfterDragDelay = 5f;
-    [SerializeField] private float showAfterIdleDelay = 5f;
     [SerializeField] private float fadeDuration = 0.4f;
 
-    [Header("Drag Detection")]
-    [SerializeField] private float dragThreshold = 2f;
-
-    private Vector3 dragStartMousePosition;
-    private bool isPressing = false;
-    private bool hasDraggedAtLeastOnce = false;
-    private bool hideTimerStarted = false;
-
-    private float idleTimer = 0f;
-
-    private Coroutine hideRoutine;
     private Coroutine fadeRoutine;
 
     private void Awake()
@@ -36,92 +23,27 @@ public class InstructionPanelRuncit : MonoBehaviour
 
     private void Start()
     {
-        if (instructionPanel != null)
-            instructionPanel.SetActive(false);
-
-        if (instructionCanvasGroup != null)
-        {
-            instructionCanvasGroup.alpha = 0f;
-            instructionCanvasGroup.interactable = false;
-            instructionCanvasGroup.blocksRaycasts = false;
-        }
+        // Automatically pop up when the level loads!
+        OpenInstruction();
     }
 
-    private void Update()
+    // Link this to the '?' button on the top right
+    public void OpenInstruction()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            dragStartMousePosition = Input.mousePosition;
-            isPressing = true;
-        }
-
-        if (Input.GetMouseButton(0) && isPressing)
-        {
-            float dragDistance = Vector3.Distance(dragStartMousePosition, Input.mousePosition);
-
-            if (dragDistance > dragThreshold)
-            {
-                hasDraggedAtLeastOnce = true;
-                idleTimer = 0f;
-
-                if (!hideTimerStarted)
-                {
-                    hideTimerStarted = true;
-
-                    if (hideRoutine != null)
-                        StopCoroutine(hideRoutine);
-
-                    hideRoutine = StartCoroutine(HideAfterDelay(hideAfterDragDelay));
-                }
-            }
-        }
-
-        if (Input.GetMouseButtonUp(0))
-        {
-            isPressing = false;
-        }
-
-        if (hasDraggedAtLeastOnce && !Input.GetMouseButton(0))
-        {
-            idleTimer += Time.deltaTime;
-
-            if (idleTimer >= showAfterIdleDelay)
-            {
-                FadeInPanel();
-                idleTimer = 0f;
-                hasDraggedAtLeastOnce = false;
-                hideTimerStarted = false;
-            }
-        }
-    }
-
-    public void ShowInstructionNow()
-    {
-        idleTimer = 0f;
-        hasDraggedAtLeastOnce = false;
-        hideTimerStarted = false;
-
-        if (hideRoutine != null)
-        {
-            StopCoroutine(hideRoutine);
-            hideRoutine = null;
-        }
-
+        PlayButtonSFX();
         FadeInPanel();
     }
 
-    private IEnumerator HideAfterDelay(float delay)
+    // Link this to the 'X' button on the Panduan panel
+    public void CloseInstruction()
     {
-        yield return new WaitForSeconds(delay);
-
+        PlayButtonSFX();
         FadeOutPanel();
-        hideRoutine = null;
     }
 
     private void FadeOutPanel()
     {
-        if (instructionPanel == null || instructionCanvasGroup == null)
-            return;
+        if (instructionPanel == null || instructionCanvasGroup == null) return;
 
         if (fadeRoutine != null)
             StopCoroutine(fadeRoutine);
@@ -131,8 +53,7 @@ public class InstructionPanelRuncit : MonoBehaviour
 
     private void FadeInPanel()
     {
-        if (instructionPanel == null || instructionCanvasGroup == null)
-            return;
+        if (instructionPanel == null || instructionCanvasGroup == null) return;
 
         if (fadeRoutine != null)
             StopCoroutine(fadeRoutine);
@@ -171,5 +92,11 @@ public class InstructionPanelRuncit : MonoBehaviour
         }
 
         fadeRoutine = null;
+    }
+
+    private void PlayButtonSFX()
+    {
+        if (SFXManager.Instance != null)
+            SFXManager.Instance.PlayButtonClick();
     }
 }
