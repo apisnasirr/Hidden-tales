@@ -7,6 +7,9 @@ public class LevelCompleteManager : MonoBehaviour
     [Header("UI")]
     [SerializeField] private GameObject completePanel;
 
+    [Header("Dependencies")]
+    [SerializeField] private GameTimerManager timerManager; // <-- NEW: Slot for your timer!
+
     [Header("Popup Animation Without Animator")]
     [SerializeField] private RectTransform popupTarget;
     [SerializeField] private float popupDuration = 0.5f;
@@ -42,6 +45,13 @@ public class LevelCompleteManager : MonoBehaviour
             return;
 
         hasCompleted = true;
+
+        // --- NEW: Stop the timer before showing the UI! ---
+        if (timerManager != null)
+        {
+            timerManager.StopTimer();
+        }
+        // --------------------------------------------------
 
         if (completePanel != null)
         {

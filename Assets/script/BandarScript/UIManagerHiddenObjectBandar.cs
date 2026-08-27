@@ -166,13 +166,19 @@ public class HiddenObjectUIManager : MonoBehaviour
         if (uiLookup.Count == 0)
             return false;
 
+        bool allCollected = true;
+
         foreach (var pair in uiLookup)
         {
             if (pair.Value.remainingCount > 0)
-                return false;
+            {
+                // This will print the EXACT item and how many are missing!
+                Debug.LogWarning("[UIManager] Masih tunggu " + pair.Value.remainingCount + " item untuk kategori: " + pair.Key);
+                allCollected = false;
+            }
         }
 
-        return true;
+        return allCollected;
     }
 
     public int GetTotalRemainingCount()

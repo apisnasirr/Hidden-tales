@@ -3752,7 +3752,7 @@ MonoBehaviour:
   victorySfx: {fileID: 8300000, guid: e68f42a08ec15f54c991e7cbc15595fc, type: 3}
   defeatSfx: {fileID: 8300000, guid: 24102b798787db044bd28afa7bf50720, type: 3}
   coinGainSfx: {fileID: 8300000, guid: b7dc0586d7974924a8c5ed34a5d5731c, type: 3}
-  coinUseSfx: {fileID: 8300000, guid: d375d9034240f3445bcf6bbc6586caad, type: 3}
+  coinUseSfx: {fileID: 8300000, guid: 54878f1d7cd9acd4ba4215e736cda205, type: 3}
   notEnoughCoinSfx: {fileID: 8300000, guid: e52f6a96b87dd6348b6a95e0ccf4bd83, type: 3}
   hiddenCharacterSfx: {fileID: 0}
   catSfx: {fileID: 8300000, guid: 3ddcfbe115bb86c4d9199bc716c99e03, type: 3}
@@ -3819,6 +3819,10 @@ MonoBehaviour:
   loadingPanel: {fileID: 582385687}
   loadingSlider: {fileID: 15577003}
   percentText: {fileID: 730372559}
+  bandarInfoPanel: {fileID: 0}
+  bengkelInfoPanel: {fileID: 0}
+  runcitInfoPanel: {fileID: 0}
+  defaultInfoPanel: {fileID: 0}
   loadingDuration: 3
 --- !u!4 &2089296657
 Transform:

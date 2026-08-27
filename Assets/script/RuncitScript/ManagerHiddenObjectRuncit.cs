@@ -169,23 +169,28 @@ public class ManagerHiddenObjectRuncit : MonoBehaviour
 
         if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
         {
-            CaptureScrollPosition();
-
             uiManager.ConsumeOne(hiddenObject.CategoryId);
-
             PlayTickAnimation(hiddenObject.CategoryId);
-
-            StartScrollLock();
         }
 
-        if (!levelCompleteTriggered && AreAllHiddenObjectsFound())
+        // --- THE NEW WIN LOGIC ---
+        if (foundObjects.Count >= allObjects.Count)
         {
-            levelCompleteTriggered = true;
-            TriggerLevelComplete();
+            Debug.Log("[Manager] SUCCESS: All " + allObjects.Count + " items in the scene have been found!");
+            
+            if (!levelCompleteTriggered)
+            {
+                levelCompleteTriggered = true;
+                TriggerLevelComplete();
+            }
         }
-
+        else
+        {
+            Debug.Log("[Manager] Item found! Total found: " + foundObjects.Count + " / " + allObjects.Count);
+        }
         return true;
     }
+
 
     public bool TryMarkFound(HiddenObjectRuncit hiddenObject, bool moveToUI)
     {

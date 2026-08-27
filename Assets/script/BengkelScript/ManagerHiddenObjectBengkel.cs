@@ -246,10 +246,20 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
             StartScrollLock();
         }
 
-        if (!levelCompleteTriggered && AreAllHiddenObjectsFound())
+        // --- THE NEW WIN LOGIC ---
+        if (foundObjects.Count >= allObjects.Count)
         {
-            levelCompleteTriggered = true;
-            TriggerLevelComplete();
+            Debug.Log("[Manager] SUCCESS: All " + allObjects.Count + " items in the scene have been found!");
+            
+            if (!levelCompleteTriggered)
+            {
+                levelCompleteTriggered = true;
+                TriggerLevelComplete();
+            }
+        }
+        else
+        {
+            Debug.Log("[Manager] Item found! Total found: " + foundObjects.Count + " / " + allObjects.Count);
         }
     }
 

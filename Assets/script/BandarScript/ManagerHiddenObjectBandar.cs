@@ -142,10 +142,19 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
             PlayTickAnimation(hiddenObject.CategoryId);
         }
 
-        if (!levelCompleteTriggered && uiManager != null && uiManager.AreAllObjectsCollected())
+        if (foundObjects.Count >= allObjects.Count)
         {
-            levelCompleteTriggered = true;
-            TriggerLevelComplete();
+            Debug.Log("[ManagerBandar] SUCCESS: All " + allObjects.Count + " items in the scene have been found!");
+            
+            if (!levelCompleteTriggered)
+            {
+                levelCompleteTriggered = true;
+                TriggerLevelComplete();
+            }
+        }
+        else
+        {
+            Debug.Log("[ManagerBandar] Item found! Total found: " + foundObjects.Count + " / " + allObjects.Count);
         }
 
         return true;
@@ -625,7 +634,15 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
     private void TriggerLevelComplete()
     {
+        // --- ADDED DEBUG LOGS HERE ---
         if (levelCompleteManager != null)
+        {
+            Debug.Log("[ManagerBandar] Calling ShowLevelComplete() on the LevelCompleteManager now!");
             levelCompleteManager.ShowLevelComplete();
+        }
+        else
+        {
+            Debug.LogError("[ManagerBandar] FATAL ERROR: LevelCompleteManager slot is empty! Cannot show Win Panel.");
+        }
     }
 }
