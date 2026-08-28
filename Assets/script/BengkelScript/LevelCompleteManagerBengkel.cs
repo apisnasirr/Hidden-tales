@@ -91,6 +91,8 @@ public class LevelCompleteManagerBengkel : MonoBehaviour
 
         if (pauseGameOnComplete)
             Time.timeScale = 0f;
+
+        PlayerPrefs.SetInt("RuncitUnlocked", 1);
     }
 
     private IEnumerator PlayPopupAnimation()

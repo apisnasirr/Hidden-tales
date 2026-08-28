@@ -84,6 +84,8 @@ public class LevelCompleteManager : MonoBehaviour
 
         if (pauseGameOnComplete)
             Time.timeScale = 0f;
+
+        PlayerPrefs.SetInt("BengkelUnlocked", 1);
     }
 
     private IEnumerator PlayPopupAnimation()
