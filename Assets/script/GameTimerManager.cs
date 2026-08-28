@@ -98,6 +98,12 @@ public class GameTimerManager : MonoBehaviour
         timerRunning = false;
     }
 
+    // --- NEW: Gets exactly how many seconds the player took to finish! ---
+    public float GetTimeTaken()
+    {
+        return (timerMinutes * 60f) - currentTime;
+    }
+
     private void LoadSceneWithLoading(string sceneName)
     {
         Time.timeScale = 1f;
