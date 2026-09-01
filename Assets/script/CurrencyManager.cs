@@ -14,7 +14,7 @@ public class CurrencyManager : MonoBehaviour
     [SerializeField] private int startCoins = 0;
 
     [Header("Coin Text Format")]
-    [SerializeField] private string coinsPrefix = "Coins: ";
+    [SerializeField] private string coinsPrefix = ":  ";
 
     private static bool isInitialized = false;
     private static int currentCoins = 0;

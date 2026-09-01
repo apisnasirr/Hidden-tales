@@ -3636,7 +3636,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startCoins: 0
-  coinsPrefix: 'Coins: '
+  coinsPrefix: 'Coins :'
 --- !u!4 &1951421865
 Transform:
   m_ObjectHideFlags: 0
