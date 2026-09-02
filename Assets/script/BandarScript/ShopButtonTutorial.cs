@@ -1,50 +1,62 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ShopButtonTutorial : MonoBehaviour
 {
     [Header("UI Elements")]
-    [SerializeField] private RectTransform shopButtonRect;
-    [Tooltip("Letak graphic bulat/glow kat belakang butang shop di sini")]
+    [Tooltip("The graphic that will pulse (The Shop Button itself)")]
+    [SerializeField] private RectTransform shopButtonGraphic;
+    
+    [Tooltip("The static glow behind the button (Will NOT pulse)")]
     [SerializeField] private GameObject shopHighlightGraphic;
 
+    [Header("Arrow Settings")]
+    [Tooltip("Letak UI Image arrow dekat sini")]
+    [SerializeField] private RectTransform arrowGraphic;
+    [SerializeField] private float arrowBobSpeed = 6f;
+    [SerializeField] private float arrowBobHeight = 15f; // Because UI is measured in pixels, we need a larger number like 10-20!
+
     [Header("Animation Settings")]
-    [SerializeField] private float pulseScale = 1.15f; // How big it gets
-    [SerializeField] private float pulseSpeed = 6f;    // How fast it pulses
-    [SerializeField] private float duration = 4f;      // How long the animation lasts before stopping
+    [SerializeField] private float pulseScale = 1.15f; 
+    [SerializeField] private float pulseSpeed = 6f;    
 
     private Vector3 originalScale;
+    private Vector2 originalArrowPos;
     private Coroutine pulseCoroutine;
+    private bool isPulsing = false;
 
     private void Awake()
     {
-        if (shopButtonRect == null) 
-            shopButtonRect = GetComponent<RectTransform>();
-            
-        if (shopButtonRect != null) 
-            originalScale = shopButtonRect.localScale;
+        if (shopButtonGraphic != null) 
+            originalScale = shopButtonGraphic.localScale;
         
-        // Hide the highlight glow at start
         if (shopHighlightGraphic != null) 
             shopHighlightGraphic.SetActive(false);
+
+        // Hide arrow at start and remember its position
+        if (arrowGraphic != null)
+        {
+            originalArrowPos = arrowGraphic.anchoredPosition;
+            arrowGraphic.gameObject.SetActive(false);
+        }
     }
 
     private void OnEnable()
     {
-        // Listen for the character to be collected
         CharacterHighlight.OnTutorialCharacterCollected += StartShopPulse;
     }
 
     private void OnDisable()
     {
-        // Stop listening if the button is destroyed
         CharacterHighlight.OnTutorialCharacterCollected -= StartShopPulse;
     }
 
     private void StartShopPulse()
     {
-        if (gameObject.activeInHierarchy)
+        if (gameObject.activeInHierarchy && !isPulsing)
         {
+            isPulsing = true;
             if (pulseCoroutine != null) 
                 StopCoroutine(pulseCoroutine);
                 
@@ -54,28 +66,57 @@ public class ShopButtonTutorial : MonoBehaviour
 
     private IEnumerator PulseRoutine()
     {
-        // Turn on the glowing highlight behind the button
         if (shopHighlightGraphic != null) 
             shopHighlightGraphic.SetActive(true);
 
+        if (arrowGraphic != null)
+            arrowGraphic.gameObject.SetActive(true);
+
         float timer = 0f;
 
-        while (timer < duration)
+        while (isPulsing) 
         {
-            timer += Time.unscaledDeltaTime; // Unscaled so it works even if game is paused
+            timer += Time.unscaledDeltaTime; 
             
-            // Math to make it go big and small smoothly
-            float scaleAmount = 1f + (Mathf.Sin(timer * pulseSpeed) * (pulseScale - 1f));
-            shopButtonRect.localScale = originalScale * scaleAmount;
+            // 1. Pulse the Button
+            if (shopButtonGraphic != null)
+            {
+                float scaleAmount = 1f + (Mathf.Sin(timer * pulseSpeed) * (pulseScale - 1f));
+                shopButtonGraphic.localScale = originalScale * scaleAmount;
+            }
+
+            // 2. Bob the Arrow
+            if (arrowGraphic != null)
+            {
+                float newY = Mathf.Sin(timer * arrowBobSpeed) * arrowBobHeight;
+                arrowGraphic.anchoredPosition = originalArrowPos + new Vector2(0f, newY);
+            }
             
             yield return null;
         }
+    }
 
-        // Reset everything back to normal when finished
-        shopButtonRect.localScale = originalScale;
+    public void StopShopPulseAndHighlight()
+    {
+        isPulsing = false; 
+
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(pulseCoroutine);
+            pulseCoroutine = null;
+        }
+
+        // Reset sizes and turn everything off
+        if (shopButtonGraphic != null)
+            shopButtonGraphic.localScale = originalScale;
+            
         if (shopHighlightGraphic != null) 
             shopHighlightGraphic.SetActive(false);
-            
-        pulseCoroutine = null;
+
+        if (arrowGraphic != null)
+        {
+            arrowGraphic.anchoredPosition = originalArrowPos;
+            arrowGraphic.gameObject.SetActive(false);
+        }
     }
 }
