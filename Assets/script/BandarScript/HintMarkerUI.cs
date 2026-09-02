@@ -11,6 +11,10 @@ public class HintMarkerUI : MonoBehaviour
     [SerializeField] private Vector3 markerScale = new Vector3(1.5f, 1.5f, 1f);
     [SerializeField] private Vector3 worldOffset = new Vector3(0f, 0f, 0f);
 
+    [Header("Animation")]
+    [SerializeField] private float pulseSpeed = 8f;        // How fast it bubbles
+    [SerializeField] private float pulseIntensity = 0.2f;  // How much bigger/smaller it gets
+
     [Header("Debug")]
     [SerializeField] private bool debugShowOnStart = false;
     [SerializeField] private Vector3 debugWorldPosition = new Vector3(0f, 0f, 0f);
@@ -87,7 +91,6 @@ public class HintMarkerUI : MonoBehaviour
     private IEnumerator ShowRoutine(float duration)
     {
         markerRenderer.color = markerColor;
-        transform.localScale = markerScale;
         transform.position = currentTarget.position + worldOffset;
         markerRenderer.enabled = true;
 
@@ -96,10 +99,20 @@ public class HintMarkerUI : MonoBehaviour
         while (time < duration && currentTarget != null)
         {
             time += Time.deltaTime;
+            
+            // Track the target's position
             transform.position = currentTarget.position + worldOffset;
+            
+            // --- NEW: Bubbly Animation Math ---
+            // Mathf.Sin goes smoothly back and forth between -1 and 1.
+            float scaleModifier = 1f + (Mathf.Sin(time * pulseSpeed) * pulseIntensity);
+            transform.localScale = markerScale * scaleModifier;
+
             yield return null;
         }
 
+        // Reset everything when the timer runs out
+        transform.localScale = markerScale; 
         markerRenderer.enabled = false;
         currentTarget = null;
         showRoutine = null;

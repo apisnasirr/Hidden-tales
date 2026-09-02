@@ -10,10 +10,15 @@ public class HintMarkerUIRuncit : MonoBehaviour
     [SerializeField] private CanvasGroup canvasGroup;
     [SerializeField] private Vector3 worldOffset = Vector3.zero;
 
+    [Header("Animation")]
+    [SerializeField] private float pulseSpeed = 8f;        // How fast it bubbles
+    [SerializeField] private float pulseIntensity = 0.2f;  // How much bigger/smaller it gets
+
     private RectTransform canvasRect;
     private Transform currentTarget;
     private Coroutine hideRoutine;
     private bool initialized;
+    private Vector3 originalScale; // Remember the starting size
 
     private void Awake()
     {
@@ -39,6 +44,10 @@ public class HintMarkerUIRuncit : MonoBehaviour
 
         if (targetCanvas != null)
             canvasRect = targetCanvas.GetComponent<RectTransform>();
+
+        // Capture the original size of the UI so the animation scales perfectly
+        if (markerRect != null)
+            originalScale = markerRect.localScale; 
 
         initialized = true;
     }
@@ -67,7 +76,27 @@ public class HintMarkerUIRuncit : MonoBehaviour
 
     private IEnumerator HideAfter(float duration)
     {
-        yield return new WaitForSeconds(duration);
+        float time = 0f;
+
+        // Loop runs until the timer is up
+        while (time < duration)
+        {
+            time += Time.deltaTime;
+
+            // --- Bubbly Animation Math ---
+            if (markerRect != null)
+            {
+                float scaleModifier = 1f + (Mathf.Sin(time * pulseSpeed) * pulseIntensity);
+                markerRect.localScale = originalScale * scaleModifier;
+            }
+
+            yield return null;
+        }
+
+        // Reset the scale back to normal before hiding it
+        if (markerRect != null)
+            markerRect.localScale = originalScale;
+
         HideInstant();
         hideRoutine = null;
     }

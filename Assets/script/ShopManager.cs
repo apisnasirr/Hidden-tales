@@ -343,7 +343,7 @@ public class ShopManager : MonoBehaviour
         if (coinsText == null)
             return;
 
-        coinsText.text = "Coins: " + coins;
+        coinsText.text = coins.ToString();
     }
 
     private void ShowFeedback(string message)

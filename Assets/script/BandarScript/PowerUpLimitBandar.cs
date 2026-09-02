@@ -10,7 +10,6 @@ public class PowerUpLimitUIBandar : MonoBehaviour
     [Header("Shop Item IDs")]
     [SerializeField] private string focusHintItemId = "focus_hint";
     [SerializeField] private string zoomHintItemId = "zoom_hint";
-    [SerializeField] private string magnetItemId = "magnet";
 
     [Header("Focus Hint UI")]
     [SerializeField] private TMP_Text focusHintCountText;
@@ -21,11 +20,6 @@ public class PowerUpLimitUIBandar : MonoBehaviour
     [SerializeField] private TMP_Text zoomHintCountText;
     [SerializeField] private Button zoomHintButton;
     [SerializeField] private Image zoomHintIcon;
-
-    [Header("Magnet UI")]
-    [SerializeField] private TMP_Text magnetCountText;
-    [SerializeField] private Button magnetButton;
-    [SerializeField] private Image magnetIcon;
 
     [Header("Color")]
     [SerializeField] private Color activeColor = Color.white;
@@ -57,11 +51,9 @@ public class PowerUpLimitUIBandar : MonoBehaviour
 
         int focusCount = CurrencyManager.Instance.GetItemAmount(focusHintItemId);
         int zoomCount = CurrencyManager.Instance.GetItemAmount(zoomHintItemId);
-        int magnetCount = CurrencyManager.Instance.GetItemAmount(magnetItemId);
 
         RefreshOne(focusCount, focusHintCountText, focusHintButton, focusHintIcon);
         RefreshOne(zoomCount, zoomHintCountText, zoomHintButton, zoomHintIcon);
-        RefreshOne(magnetCount, magnetCountText, magnetButton, magnetIcon);
     }
 
     public void OnClickFocusHint()
@@ -97,24 +89,6 @@ public class PowerUpLimitUIBandar : MonoBehaviour
         if (!success) return;
 
         CurrencyManager.Instance.UseItem(zoomHintItemId, 1);
-        RefreshUI();
-    }
-
-    public void OnClickMagnet()
-    {
-        if (CurrencyManager.Instance == null || manager == null) return;
-
-        int currentAmount = CurrencyManager.Instance.GetItemAmount(magnetItemId);
-        if (currentAmount <= 0)
-        {
-            RefreshUI();
-            return;
-        }
-
-        bool success = manager.UseMagnetPower();
-        if (!success) return;
-
-        CurrencyManager.Instance.UseItem(magnetItemId, 1);
         RefreshUI();
     }
 

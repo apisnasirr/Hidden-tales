@@ -13,8 +13,7 @@ public class CurrencyManager : MonoBehaviour
     [Header("Debug Start Value")]
     [SerializeField] private int startCoins = 0;
 
-    [Header("Coin Text Format")]
-    [SerializeField] private string coinsPrefix = ":  ";
+    // Notice: coinsPrefix is completely gone! 
 
     private static bool isInitialized = false;
     private static int currentCoins = 0;
@@ -191,7 +190,8 @@ public class CurrencyManager : MonoBehaviour
                 continue;
             }
 
-            coinsTexts[i].text = coinsPrefix + currentCoins;
+            // ONLY outputs the number now! (e.g. "5")
+            coinsTexts[i].text = currentCoins.ToString();
         }
     }
 
