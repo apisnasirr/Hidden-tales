@@ -2825,7 +2825,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: b5229a8ea7dbfd44eb2fd825b9803db0, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 307f96b89bb38c3439630e594a987721, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3636,7 +3636,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startCoins: 0
-  coinsPrefix: 
 --- !u!4 &1951421865
 Transform:
   m_ObjectHideFlags: 0
