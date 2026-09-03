@@ -40,6 +40,10 @@ public class CameraDrag2DRuncit : MonoBehaviour
     private float zoomVelocity;
     private float defaultZoom;
 
+    // --- NEW VARIABLES FOR PERFECT CENTERING ---
+    private bool isFocusing = false; 
+    private Vector3 rawFocusTarget; 
+
     private bool IsPointerOverUI()
     {
         if (EventSystem.current == null)
@@ -87,6 +91,7 @@ public class CameraDrag2DRuncit : MonoBehaviour
 
     private void LateUpdate()
     {
+        // 1. Zoom the camera
         cam.orthographicSize = Mathf.SmoothDamp(
             cam.orthographicSize,
             targetZoom,
@@ -94,11 +99,25 @@ public class CameraDrag2DRuncit : MonoBehaviour
             zoomSmoothTime
         );
 
-        targetCameraPos = ClampCameraPosition(targetCameraPos);
+        // 2. If we are using a hint, always aim for the true raw position
+        if (isFocusing)
+        {
+            targetCameraPos = rawFocusTarget;
+        }
 
+        // 3. Dynamically clamp the target based on the CURRENT zooming size
+        Vector3 clampedTarget = ClampCameraPosition(targetCameraPos);
+
+        // 4. If dragging manually, lock the target so it doesn't rubber-band
+        if (!isFocusing)
+        {
+            targetCameraPos = clampedTarget;
+        }
+
+        // 5. Move the camera
         Vector3 newPos = Vector3.SmoothDamp(
             transform.position,
-            targetCameraPos,
+            clampedTarget, // <--- Using the dynamic clamped target here
             ref currentVelocity,
             smoothTime,
             maxSpeed
@@ -148,20 +167,22 @@ public class CameraDrag2DRuncit : MonoBehaviour
     }
 
     private void HandleMouseZoom()
-{
-    if (Input.touchCount > 0)
-        return;
+    {
+        if (Input.touchCount > 0)
+            return;
 
-    if (IsPointerOverUI())
-        return;
+        if (IsPointerOverUI())
+            return;
 
-    float scroll = Input.mouseScrollDelta.y;
-    if (Mathf.Abs(scroll) < 0.01f)
-        return;
+        float scroll = Input.mouseScrollDelta.y;
+        if (Mathf.Abs(scroll) < 0.01f)
+            return;
 
-    targetZoom -= scroll * mouseZoomSpeed;
-    targetZoom = Mathf.Clamp(targetZoom, minZoom, maxZoom);
-}
+        isFocusing = false; // Turn off focus if player manually zooms
+
+        targetZoom -= scroll * mouseZoomSpeed;
+        targetZoom = Mathf.Clamp(targetZoom, minZoom, maxZoom);
+    }
 
     private void HandlePinchZoom()
     {
@@ -176,6 +197,8 @@ public class CameraDrag2DRuncit : MonoBehaviour
                 return;
             }
         }
+
+        isFocusing = false; // Turn off focus if player manually zooms
 
         Vector2 touch0PrevPos = touch0.position - touch0.deltaPosition;
         Vector2 touch1PrevPos = touch1.position - touch1.deltaPosition;
@@ -197,6 +220,7 @@ public class CameraDrag2DRuncit : MonoBehaviour
             return;
         }
 
+        isFocusing = false; // Turn off focus when player touches screen
         isDragging = true;
         dragStartWorld = ScreenToWorldOnScenePlane(screenPos);
         camStartPos = targetCameraPos;
@@ -227,10 +251,10 @@ public class CameraDrag2DRuncit : MonoBehaviour
     public void FocusOnWorldPosition(Vector3 worldPos)
     {
         isDragging = false;
+        isFocusing = true; // --- NEW: Tells the script to remember the target! ---
         currentVelocity = Vector3.zero;
 
-        Vector3 wantedPos = new Vector3(worldPos.x, worldPos.y, transform.position.z);
-        targetCameraPos = ClampCameraPosition(wantedPos);
+        rawFocusTarget = new Vector3(worldPos.x, worldPos.y, transform.position.z);
     }
 
     public void SetZoomTarget(float zoomSize)

@@ -18867,7 +18867,7 @@ MonoBehaviour:
   smoothTime: 0.1
   maxSpeed: 100
   dragDeadZone: 0.03
-  minZoom: 3
+  minZoom: 2
   maxZoom: 10
   zoomSmoothTime: 0.08
   mouseZoomSpeed: 2
