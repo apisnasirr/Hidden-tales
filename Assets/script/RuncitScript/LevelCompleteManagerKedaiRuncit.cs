@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI; // <-- NEW: Required for the Star Images
+using UnityEngine.UI; 
 
 public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
 {
@@ -12,8 +12,8 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
     [SerializeField] private GameTimerManager timerManager;
 
     [Header("Star Rating System")]
-    [SerializeField] private float threeStarTimeLimit = 60f;  // Under 60 seconds = 3 Stars
-    [SerializeField] private float twoStarTimeLimit = 150f;   // Under 2.5 mins = 2 Stars
+    [SerializeField] private float threeStarTimeLimit = 60f;  
+    [SerializeField] private float twoStarTimeLimit = 150f;   
     [SerializeField] private Image star1Image;
     [SerializeField] private Image star2Image;
     [SerializeField] private Image star3Image;
@@ -24,13 +24,14 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
 
     [Header("Popup Animation Without Animator")]
     [SerializeField] private RectTransform popupTarget;
-    [SerializeField] private float popupDuration = 0.25f; // Kept your specific speed!
-    [SerializeField] private float overshootScale = 1.12f; // Kept your specific scale!
+    [SerializeField] private float popupDuration = 0.25f; 
+    [SerializeField] private float overshootScale = 1.12f; 
 
     [Header("Scene Names")]
     [SerializeField] private string bandarSceneName = "Bandar";
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string mainMenuSceneName = "Main Menu";
+    [SerializeField] private string levelSelectSceneName = "LevelSelectScene"; // <-- NEW: Added this variable
 
     [Header("Optional")]
     [SerializeField] private bool pauseGameOnComplete = false;
@@ -200,6 +201,13 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
     {
         PlayButtonSFX();
         LoadSceneWithLoading(mainMenuSceneName);
+    }
+
+    // --- NEW: Function to go to the Level Select Scene ---
+    public void GoToLevelSelect()
+    {
+        PlayButtonSFX();
+        LoadSceneWithLoading(levelSelectSceneName);
     }
 
     public void RestartLevel()

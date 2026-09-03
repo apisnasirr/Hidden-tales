@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI; // <-- NEW: Required to change the Star sprites!
+using UnityEngine.UI;
 
 public class LevelCompleteManager : MonoBehaviour
 {
@@ -12,8 +12,8 @@ public class LevelCompleteManager : MonoBehaviour
     [SerializeField] private GameTimerManager timerManager; 
 
     [Header("Star Rating System")]
-    [SerializeField] private float threeStarTimeLimit = 60f;  // Under 60 seconds = 3 Stars
-    [SerializeField] private float twoStarTimeLimit = 150f;   // Under 2.5 mins = 2 Stars
+    [SerializeField] private float threeStarTimeLimit = 60f;  
+    [SerializeField] private float twoStarTimeLimit = 150f;   
     [SerializeField] private Image star1Image;
     [SerializeField] private Image star2Image;
     [SerializeField] private Image star3Image;
@@ -31,6 +31,7 @@ public class LevelCompleteManager : MonoBehaviour
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string runcitSceneName = "Kedai Runcit";
     [SerializeField] private string mainMenuSceneName = "Main Menu";
+    [SerializeField] private string levelSelectSceneName = "LevelSelectScene"; // <-- NEW: Added this variable
 
     [Header("Optional")]
     [SerializeField] private bool pauseGameOnComplete = false;
@@ -61,7 +62,6 @@ public class LevelCompleteManager : MonoBehaviour
         if (timerManager != null)
             timerManager.StopTimer();
 
-        // Hide stars before animation starts
         if (star1Image != null) star1Image.transform.localScale = Vector3.zero;
         if (star2Image != null) star2Image.transform.localScale = Vector3.zero;
         if (star3Image != null) star3Image.transform.localScale = Vector3.zero;
@@ -119,7 +119,6 @@ public class LevelCompleteManager : MonoBehaviour
 
         popupTarget.localScale = originalScale;
         
-        // Start the star animation right after the panel finishes popping up!
         StartCoroutine(AnimateStarsRoutine());
         
         popupRoutine = null;
@@ -127,8 +126,7 @@ public class LevelCompleteManager : MonoBehaviour
 
     private IEnumerator AnimateStarsRoutine()
     {
-        // 1. Calculate how many stars they earned
-        int starsEarned = 1; // Default is 1 star just for finishing
+        int starsEarned = 1; 
 
         if (timerManager != null)
         {
@@ -141,17 +139,14 @@ public class LevelCompleteManager : MonoBehaviour
                 starsEarned = 2;
         }
 
-        // 2. Animate them one by one
         Image[] stars = { star1Image, star2Image, star3Image };
 
         for (int i = 0; i < stars.Length; i++)
         {
             if (stars[i] == null) continue;
 
-            // Swap to filled sprite if they earned it, outline sprite if they didn't
             stars[i].sprite = (i < starsEarned) ? starFilledSprite : starEmptySprite;
             
-            // Play popup animation for this specific star
             float timer = 0f;
             while (timer < starAnimDuration)
             {
@@ -162,8 +157,6 @@ public class LevelCompleteManager : MonoBehaviour
             }
 
             stars[i].transform.localScale = Vector3.one;
-
-            // Optional: Play a "ding!" SFX here if you want!
             
             yield return new WaitForSecondsRealtime(delayBetweenStars);
         }
@@ -180,6 +173,10 @@ public class LevelCompleteManager : MonoBehaviour
     public void GoToBengkel() { PlayButtonSFX(); LoadSceneWithLoading(bengkelSceneName); }
     public void GoToRuncit() { PlayButtonSFX(); LoadSceneWithLoading(runcitSceneName); }
     public void GoToMainMenu() { PlayButtonSFX(); LoadSceneWithLoading(mainMenuSceneName); }
+    
+    // --- NEW: Function to go to the Level Select Scene ---
+    public void GoToLevelSelect() { PlayButtonSFX(); LoadSceneWithLoading(levelSelectSceneName); } 
+    
     public void RestartLevel() { PlayButtonSFX(); LoadSceneWithLoading(SceneManager.GetActiveScene().name); }
 
     private void LoadSceneWithLoading(string sceneName)
