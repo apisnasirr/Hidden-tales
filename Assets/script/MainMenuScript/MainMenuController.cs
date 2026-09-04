@@ -12,10 +12,11 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Slider sfxSlider;
 
     [Header("Scene Names")]
-    [SerializeField] private string levelSelectSceneName = "LevelSelectScene"; // Your new scene!
+    [SerializeField] private string levelSelectSceneName = "LevelSelectScene"; 
     [SerializeField] private string bandarSceneName = "Bandar";
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string runcitSceneName = "Kedai Runcit";
+    [SerializeField] private string resultSceneName = "ResultScene"; // <-- NEW: Added Result Scene variable
 
     private const string MusicVolumeKey = "MusicVolume";
     private const string SFXVolumeKey = "SFX_VOLUME";
@@ -57,7 +58,6 @@ public class MainMenuController : MonoBehaviour
         float savedMusic = PlayerPrefs.GetFloat(MusicVolumeKey, 1f);
         float savedSFX = PlayerPrefs.GetFloat(SFXVolumeKey, 1f);
 
-        // Updated to use the correct GetMusicVolume() from your BGMManager
         if (BGMManager.Instance != null)
             savedMusic = BGMManager.Instance.GetMusicVolume();
 
@@ -77,9 +77,16 @@ public class MainMenuController : MonoBehaviour
     public void OpenLevelSelect()
     {
         PlayButtonSFX();
-        // Now it loads the new scene instead of opening a panel!
         LoadSceneWithLoading(levelSelectSceneName);
     }
+
+    // --- NEW: Function to load the Result Scene ---
+    public void OpenResultScene()
+    {
+        PlayButtonSFX();
+        LoadSceneWithLoading(resultSceneName);
+    }
+    // ----------------------------------------------
 
     public void LoadBandar()
     {

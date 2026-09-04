@@ -31,7 +31,7 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
     [SerializeField] private string bandarSceneName = "Bandar";
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string mainMenuSceneName = "Main Menu";
-    [SerializeField] private string levelSelectSceneName = "LevelSelectScene"; // <-- NEW: Added this variable
+    [SerializeField] private string levelSelectSceneName = "LevelSelectScene";
 
     [Header("Optional")]
     [SerializeField] private bool pauseGameOnComplete = false;
@@ -151,6 +151,15 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
             else if (timeTaken <= twoStarTimeLimit)
                 starsEarned = 2;
         }
+
+        // --- NEW: Save the highest stars for Kedai Runcit ---
+        int savedStars = PlayerPrefs.GetInt("RuncitStars", 0);
+        if (starsEarned > savedStars)
+        {
+            PlayerPrefs.SetInt("RuncitStars", starsEarned);
+            PlayerPrefs.Save();
+        }
+        // ----------------------------------------------------
 
         Image[] stars = { star1Image, star2Image, star3Image };
 

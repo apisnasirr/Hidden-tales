@@ -31,7 +31,7 @@ public class LevelCompleteManagerBengkel : MonoBehaviour
     [SerializeField] private string bandarSceneName = "Bandar";
     [SerializeField] private string runcitSceneName = "Kedai Runcit";
     [SerializeField] private string mainMenuSceneName = "Main Menu";
-    [SerializeField] private string levelSelectSceneName = "LevelSelectScene"; // <-- NEW: Added this variable
+    [SerializeField] private string levelSelectSceneName = "LevelSelectScene";
 
     [Header("Optional")]
     [SerializeField] private bool pauseGameOnComplete = false;
@@ -109,12 +109,10 @@ public class LevelCompleteManagerBengkel : MonoBehaviour
         while (timer < popupDuration)
         {
             timer += Time.unscaledDeltaTime;
-
             float t = timer / popupDuration;
             t = Mathf.Clamp01(t);
 
             popupTarget.localScale = Vector3.Lerp(Vector3.zero, overshoot, EaseOutBack(t));
-
             yield return null;
         }
 
@@ -124,12 +122,10 @@ public class LevelCompleteManagerBengkel : MonoBehaviour
         while (timer < settleDuration)
         {
             timer += Time.unscaledDeltaTime;
-
             float t = timer / settleDuration;
             t = Mathf.Clamp01(t);
 
             popupTarget.localScale = Vector3.Lerp(overshoot, originalScale, t);
-
             yield return null;
         }
 
@@ -155,6 +151,15 @@ public class LevelCompleteManagerBengkel : MonoBehaviour
             else if (timeTaken <= twoStarTimeLimit)
                 starsEarned = 2;
         }
+
+        // --- NEW: Save the highest stars for Bengkel ---
+        int savedStars = PlayerPrefs.GetInt("BengkelStars", 0);
+        if (starsEarned > savedStars)
+        {
+            PlayerPrefs.SetInt("BengkelStars", starsEarned);
+            PlayerPrefs.Save();
+        }
+        // -----------------------------------------------
 
         Image[] stars = { star1Image, star2Image, star3Image };
 
@@ -185,7 +190,6 @@ public class LevelCompleteManagerBengkel : MonoBehaviour
     {
         float c1 = 1.70158f;
         float c3 = c1 + 1f;
-
         return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
     }
 

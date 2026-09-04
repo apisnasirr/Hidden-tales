@@ -31,7 +31,7 @@ public class LevelCompleteManager : MonoBehaviour
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string runcitSceneName = "Kedai Runcit";
     [SerializeField] private string mainMenuSceneName = "Main Menu";
-    [SerializeField] private string levelSelectSceneName = "LevelSelectScene"; // <-- NEW: Added this variable
+    [SerializeField] private string levelSelectSceneName = "LevelSelectScene";
 
     [Header("Optional")]
     [SerializeField] private bool pauseGameOnComplete = false;
@@ -139,6 +139,15 @@ public class LevelCompleteManager : MonoBehaviour
                 starsEarned = 2;
         }
 
+        // --- NEW: Save the highest stars for Bandar ---
+        int savedStars = PlayerPrefs.GetInt("BandarStars", 0);
+        if (starsEarned > savedStars)
+        {
+            PlayerPrefs.SetInt("BandarStars", starsEarned);
+            PlayerPrefs.Save();
+        }
+        // ----------------------------------------------
+
         Image[] stars = { star1Image, star2Image, star3Image };
 
         for (int i = 0; i < stars.Length; i++)
@@ -160,6 +169,7 @@ public class LevelCompleteManager : MonoBehaviour
             
             yield return new WaitForSecondsRealtime(delayBetweenStars);
         }
+        
     }
 
     private float EaseOutBack(float t)
