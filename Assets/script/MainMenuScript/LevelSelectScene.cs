@@ -1,6 +1,7 @@
 using UnityEngine;
-using UnityEngine.UI; // <-- NEW: Needed for Button components
+using UnityEngine.UI; 
 using UnityEngine.SceneManagement;
+using TMPro; // <-- NEW: Needed to update the Star Text!
 
 public class LevelSelectController : MonoBehaviour
 {
@@ -10,33 +11,50 @@ public class LevelSelectController : MonoBehaviour
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string runcitSceneName = "Kedai Runcit";
 
-    [Header("Level Buttons & Locks")]
+    [Header("Bandar UI (Always Unlocked)")]
+    [SerializeField] private GameObject bandarStarObj;
+    [SerializeField] private TextMeshProUGUI bandarStarText;
+
+    [Header("Bengkel UI & Locks")]
     [SerializeField] private Button bengkelButton;
     [SerializeField] private GameObject bengkelLockIcon;
+    [SerializeField] private GameObject bengkelStarObj;
+    [SerializeField] private TextMeshProUGUI bengkelStarText;
     
+    [Header("Runcit UI & Locks")]
     [SerializeField] private Button runcitButton;
     [SerializeField] private GameObject runcitLockIcon;
+    [SerializeField] private GameObject runcitStarObj;
+    [SerializeField] private TextMeshProUGUI runcitStarText;
 
     private void Start()
     {
-        // Check the locks as soon as the menu opens!
-        CheckLevelLocks();
+        CheckLevelState();
     }
 
-    private void CheckLevelLocks()
+    private void CheckLevelState()
     {
-        // Bandar is always unlocked, so we only check Bengkel and Runcit.
-        // PlayerPrefs will check if it equals 1 (Unlocked). If it doesn't exist yet, it defaults to 0 (Locked).
         bool isBengkelUnlocked = PlayerPrefs.GetInt("BengkelUnlocked", 0) == 1;
         bool isRuncitUnlocked = PlayerPrefs.GetInt("RuncitUnlocked", 0) == 1;
 
-        // Toggle Bengkel Button
+        int bandarStars = PlayerPrefs.GetInt("BandarStars", 0);
+        int bengkelStars = PlayerPrefs.GetInt("BengkelStars", 0);
+        int runcitStars = PlayerPrefs.GetInt("RuncitStars", 0);
+
+        if (bandarStarObj != null) bandarStarObj.SetActive(true);
+        if (bandarStarText != null) bandarStarText.text = $"{bandarStars}/3";
+
         if (bengkelButton != null) bengkelButton.interactable = isBengkelUnlocked;
         if (bengkelLockIcon != null) bengkelLockIcon.SetActive(!isBengkelUnlocked);
+        
+        if (bengkelStarObj != null) bengkelStarObj.SetActive(isBengkelUnlocked);
+        if (bengkelStarText != null) bengkelStarText.text = $"{bengkelStars}/3";
 
-        // Toggle Runcit Button
         if (runcitButton != null) runcitButton.interactable = isRuncitUnlocked;
         if (runcitLockIcon != null) runcitLockIcon.SetActive(!isRuncitUnlocked);
+        
+        if (runcitStarObj != null) runcitStarObj.SetActive(isRuncitUnlocked);
+        if (runcitStarText != null) runcitStarText.text = $"{runcitStars}/3";
     }
 
     public void BackToMainMenu()
@@ -79,12 +97,14 @@ public class LevelSelectController : MonoBehaviour
             SFXManager.Instance.PlayButtonClick(); 
     }
 
-    // Optional: Call this from a debug button if you ever need to relock the levels for testing!
-    public void DebugResetLocks()
+    public void DebugResetData()
     {
         PlayerPrefs.SetInt("BengkelUnlocked", 0);
         PlayerPrefs.SetInt("RuncitUnlocked", 0);
+        PlayerPrefs.SetInt("BandarStars", 0);
+        PlayerPrefs.SetInt("BengkelStars", 0);
+        PlayerPrefs.SetInt("RuncitStars", 0);
         PlayerPrefs.Save();
-        CheckLevelLocks();
+        CheckLevelState();
     }
 }

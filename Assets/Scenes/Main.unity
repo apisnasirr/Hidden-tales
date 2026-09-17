@@ -438,7 +438,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 939e014c67068e74f805c0dcd5557cbf, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c3ce7874ad0f9fa4a81271bdc0511ed7, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1461,14 +1461,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5229632fa7e7cf4b8e68af1acad7ddc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settingsPanel: {fileID: 0}
+  _menuContainer: {fileID: 0}
+  _slideDuration: 0.35
+  _swipeThreshold: 50
+  _keputusanIcon: {fileID: 0}
+  _utamaIcon: {fileID: 0}
+  _tetapanIcon: {fileID: 0}
+  _keputusanActive: {fileID: 0}
+  _utamaActive: {fileID: 0}
+  _tetapanActive: {fileID: 0}
+  _keputusanInactive: {fileID: 0}
+  _utamaInactive: {fileID: 0}
+  _tetapanInactive: {fileID: 0}
+  _creditsPopup: {fileID: 0}
+  _dimOverlay: {fileID: 0}
   musicSlider: {fileID: 0}
   sfxSlider: {fileID: 0}
   levelSelectSceneName: LevelSelectScene
   bandarSceneName: Bandar
   bengkelSceneName: bengkel
   runcitSceneName: Kedai Runcit
-  resultSceneName: ResultScene
 --- !u!4 &1876773764
 Transform:
   m_ObjectHideFlags: 0

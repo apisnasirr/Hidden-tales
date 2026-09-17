@@ -516,7 +516,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &309563793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1652,7 +1652,7 @@ RectTransform:
   m_Father: {fileID: 1777843373}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3589,7 +3589,7 @@ RectTransform:
   m_Father: {fileID: 889038177}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 7.7006073, y: 0}
   m_SizeDelta: {x: 23.4302, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -4606,10 +4606,16 @@ MonoBehaviour:
   bandarSceneName: Bandar
   bengkelSceneName: bengkel
   runcitSceneName: Kedai Runcit
+  bandarStarObj: {fileID: 0}
+  bandarStarText: {fileID: 0}
   bengkelButton: {fileID: 1252672400}
   bengkelLockIcon: {fileID: 1471500045}
+  bengkelStarObj: {fileID: 0}
+  bengkelStarText: {fileID: 0}
   runcitButton: {fileID: 997356830}
   runcitLockIcon: {fileID: 823791229}
+  runcitStarObj: {fileID: 0}
+  runcitStarText: {fileID: 0}
 --- !u!4 &1819334754
 Transform:
   m_ObjectHideFlags: 0

@@ -33,6 +33,14 @@ public class LevelCompleteManager : MonoBehaviour
     [SerializeField] private string mainMenuSceneName = "Main Menu";
     [SerializeField] private string levelSelectSceneName = "LevelSelectScene";
 
+    [Header("Save Data Keys (Change for each level)")]
+    [Tooltip("Example: BandarStars, BengkelStars, RuncitStars")]
+    [SerializeField] private string levelStarKey = "BandarStars";
+    [Tooltip("Example: BandarBestTime, BengkelBestTime, RuncitBestTime")]
+    [SerializeField] private string levelTimeKey = "BandarBestTime";
+    [Tooltip("The level to unlock next. Example: BengkelUnlocked. Leave empty for the final level.")]
+    [SerializeField] private string nextLevelUnlockKey = "BengkelUnlocked";
+
     [Header("Optional")]
     [SerializeField] private bool pauseGameOnComplete = false;
 
@@ -85,7 +93,10 @@ public class LevelCompleteManager : MonoBehaviour
         if (pauseGameOnComplete)
             Time.timeScale = 0f;
 
-        PlayerPrefs.SetInt("BengkelUnlocked", 1);
+        if (!string.IsNullOrEmpty(nextLevelUnlockKey))
+        {
+            PlayerPrefs.SetInt(nextLevelUnlockKey, 1);
+        }
     }
 
     private IEnumerator PlayPopupAnimation()
@@ -137,16 +148,22 @@ public class LevelCompleteManager : MonoBehaviour
                 starsEarned = 3;
             else if (timeTaken <= twoStarTimeLimit)
                 starsEarned = 2;
+
+            float savedBestTime = PlayerPrefs.GetFloat(levelTimeKey, 0f);
+            
+            if (savedBestTime == 0f || timeTaken < savedBestTime)
+            {
+                PlayerPrefs.SetFloat(levelTimeKey, timeTaken);
+                PlayerPrefs.Save();
+            }
         }
 
-        // --- NEW: Save the highest stars for Bandar ---
-        int savedStars = PlayerPrefs.GetInt("BandarStars", 0);
+        int savedStars = PlayerPrefs.GetInt(levelStarKey, 0);
         if (starsEarned > savedStars)
         {
-            PlayerPrefs.SetInt("BandarStars", starsEarned);
+            PlayerPrefs.SetInt(levelStarKey, starsEarned);
             PlayerPrefs.Save();
         }
-        // ----------------------------------------------
 
         Image[] stars = { star1Image, star2Image, star3Image };
 
@@ -169,7 +186,6 @@ public class LevelCompleteManager : MonoBehaviour
             
             yield return new WaitForSecondsRealtime(delayBetweenStars);
         }
-        
     }
 
     private float EaseOutBack(float t)
@@ -184,7 +200,6 @@ public class LevelCompleteManager : MonoBehaviour
     public void GoToRuncit() { PlayButtonSFX(); LoadSceneWithLoading(runcitSceneName); }
     public void GoToMainMenu() { PlayButtonSFX(); LoadSceneWithLoading(mainMenuSceneName); }
     
-    // --- NEW: Function to go to the Level Select Scene ---
     public void GoToLevelSelect() { PlayButtonSFX(); LoadSceneWithLoading(levelSelectSceneName); } 
     
     public void RestartLevel() { PlayButtonSFX(); LoadSceneWithLoading(SceneManager.GetActiveScene().name); }
