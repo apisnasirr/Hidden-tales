@@ -17,7 +17,7 @@ public class LoadingScreenManager : MonoBehaviour
     [SerializeField] private GameObject bandarInfoPanel;
     [SerializeField] private GameObject bengkelInfoPanel;
     [SerializeField] private GameObject runcitInfoPanel;
-    [SerializeField] private GameObject defaultInfoPanel; // For Main Menu or fallback
+    [SerializeField] private GameObject defaultInfoPanel; 
 
     [Header("Settings")]
     [SerializeField] private float loadingDuration = 3f;
@@ -44,7 +44,10 @@ public class LoadingScreenManager : MonoBehaviour
     public void LoadScene(string sceneName)
     {
         if (isLoading)
-            return;
+        {
+            Debug.LogWarning("[LoadingScreenManager] Safety lock was stuck on true! Forcing reset.");
+            isLoading = false; 
+        }
 
         StartCoroutine(LoadSceneRoutine(sceneName));
     }
@@ -59,13 +62,11 @@ public class LoadingScreenManager : MonoBehaviour
         if (BGMManager.Instance != null)
             BGMManager.Instance.PauseBGM();
 
-        // 1. Turn OFF all specific info panels first
         if (bandarInfoPanel != null) bandarInfoPanel.SetActive(false);
         if (bengkelInfoPanel != null) bengkelInfoPanel.SetActive(false);
         if (runcitInfoPanel != null) runcitInfoPanel.SetActive(false);
         if (defaultInfoPanel != null) defaultInfoPanel.SetActive(false);
 
-        // 2. Turn ON only the correct info panel based on the scene name!
         if (sceneName == "Bandar" && bandarInfoPanel != null)
             bandarInfoPanel.SetActive(true);
         else if (sceneName == "bengkel" && bengkelInfoPanel != null)
@@ -75,7 +76,6 @@ public class LoadingScreenManager : MonoBehaviour
         else if (defaultInfoPanel != null)
             defaultInfoPanel.SetActive(true); 
 
-        // 3. Show the main loading wrapper
         if (loadingPanel != null)
         {
             loadingPanel.SetActive(true);

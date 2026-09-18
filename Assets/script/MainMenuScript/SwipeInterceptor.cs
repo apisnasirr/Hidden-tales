@@ -5,6 +5,7 @@ public class SwipeInterceptor : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 {
     private Vector2 _startDragPosition;
     private bool _swipeIdentified = false;
+    private UnityEngine.UI.ScrollRect _scrollRect; 
 
     [SerializeField] private MainMenuController _menuController;
 
@@ -14,6 +15,8 @@ public class SwipeInterceptor : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         {
             _menuController = FindObjectOfType<MainMenuController>();
         }
+        
+        _scrollRect = GetComponent<UnityEngine.UI.ScrollRect>();
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -43,13 +46,19 @@ public class SwipeInterceptor : MonoBehaviour, IBeginDragHandler, IDragHandler, 
                     _menuController.RequestSwipe(toRight);
                 }
 
-                GetComponent<UnityEngine.UI.ScrollRect>().enabled = false;
+                if (_scrollRect != null) 
+                {
+                    _scrollRect.enabled = false;
+                }
             }
         }
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        GetComponent<UnityEngine.UI.ScrollRect>().enabled = true;
+        if (_scrollRect != null)
+        {
+            _scrollRect.enabled = true;
+        }
     }
 }

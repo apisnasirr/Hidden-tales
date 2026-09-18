@@ -33,6 +33,11 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
     [SerializeField] private string mainMenuSceneName = "Main Menu";
     [SerializeField] private string levelSelectSceneName = "LevelSelectScene";
 
+    [Header("Save Data Keys")]
+    [SerializeField] private string levelStarKey = "RuncitStars";
+    [SerializeField] private string levelTimeKey = "RuncitBestTime";
+    [SerializeField] private string nextLevelUnlockKey = ""; 
+
     [Header("Optional")]
     [SerializeField] private bool pauseGameOnComplete = false;
 
@@ -69,7 +74,6 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
             timerManager.StopTimer();
         }
 
-        // Hide stars before animation starts
         if (star1Image != null) star1Image.transform.localScale = Vector3.zero;
         if (star2Image != null) star2Image.transform.localScale = Vector3.zero;
         if (star3Image != null) star3Image.transform.localScale = Vector3.zero;
@@ -92,6 +96,11 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
 
         if (pauseGameOnComplete)
             Time.timeScale = 0f;
+
+        if (!string.IsNullOrEmpty(nextLevelUnlockKey))
+        {
+            PlayerPrefs.SetInt(nextLevelUnlockKey, 1);
+        }
     }
 
     private IEnumerator PlayPopupAnimation()
@@ -131,7 +140,6 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
 
         popupTarget.localScale = originalScale;
 
-        // Start the star animation right after the panel finishes popping up!
         StartCoroutine(AnimateStarsRoutine());
 
         popupRoutine = null;
@@ -139,7 +147,7 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
 
     private IEnumerator AnimateStarsRoutine()
     {
-        int starsEarned = 1; // Default is 1 star just for finishing
+        int starsEarned = 1; 
 
         if (timerManager != null)
         {
@@ -150,16 +158,22 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
                 starsEarned = 3;
             else if (timeTaken <= twoStarTimeLimit)
                 starsEarned = 2;
+
+            float savedBestTime = PlayerPrefs.GetFloat(levelTimeKey, 0f);
+            
+            if (savedBestTime == 0f || timeTaken < savedBestTime)
+            {
+                PlayerPrefs.SetFloat(levelTimeKey, timeTaken);
+                PlayerPrefs.Save();
+            }
         }
 
-        // --- NEW: Save the highest stars for Kedai Runcit ---
-        int savedStars = PlayerPrefs.GetInt("RuncitStars", 0);
+        int savedStars = PlayerPrefs.GetInt(levelStarKey, 0);
         if (starsEarned > savedStars)
         {
-            PlayerPrefs.SetInt("RuncitStars", starsEarned);
+            PlayerPrefs.SetInt(levelStarKey, starsEarned);
             PlayerPrefs.Save();
         }
-        // ----------------------------------------------------
 
         Image[] stars = { star1Image, star2Image, star3Image };
 
@@ -167,10 +181,8 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
         {
             if (stars[i] == null) continue;
 
-            // Swap to filled sprite if they earned it, outline sprite if they didn't
             stars[i].sprite = (i < starsEarned) ? starFilledSprite : starEmptySprite;
             
-            // Play popup animation for this specific star
             float timer = 0f;
             while (timer < starAnimDuration)
             {
@@ -194,36 +206,11 @@ public class LevelCompleteManagerKedaiRuncit : MonoBehaviour
         return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
     }
 
-    public void GoToBandar()
-    {
-        PlayButtonSFX();
-        LoadSceneWithLoading(bandarSceneName);
-    }
-
-    public void GoToBengkel()
-    {
-        PlayButtonSFX();
-        LoadSceneWithLoading(bengkelSceneName);
-    }
-
-    public void GoToMainMenu()
-    {
-        PlayButtonSFX();
-        LoadSceneWithLoading(mainMenuSceneName);
-    }
-
-    // --- NEW: Function to go to the Level Select Scene ---
-    public void GoToLevelSelect()
-    {
-        PlayButtonSFX();
-        LoadSceneWithLoading(levelSelectSceneName);
-    }
-
-    public void RestartLevel()
-    {
-        PlayButtonSFX();
-        LoadSceneWithLoading(SceneManager.GetActiveScene().name);
-    }
+    public void GoToBandar() { PlayButtonSFX(); LoadSceneWithLoading(bandarSceneName); }
+    public void GoToBengkel() { PlayButtonSFX(); LoadSceneWithLoading(bengkelSceneName); }
+    public void GoToMainMenu() { PlayButtonSFX(); LoadSceneWithLoading(mainMenuSceneName); }
+    public void GoToLevelSelect() { PlayButtonSFX(); LoadSceneWithLoading(levelSelectSceneName); }
+    public void RestartLevel() { PlayButtonSFX(); LoadSceneWithLoading(SceneManager.GetActiveScene().name); }
 
     private void LoadSceneWithLoading(string sceneName)
     {

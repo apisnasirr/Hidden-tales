@@ -394,9 +394,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1876773763}
-        m_TargetAssemblyTypeName: MainMenuController, Assembly-CSharp
-        m_MethodName: OpenLevelSelect
+      - m_Target: {fileID: 1876773765}
+        m_TargetAssemblyTypeName: TitleScreenManager, Assembly-CSharp
+        m_MethodName: ClickPlayButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1204,7 +1204,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1876773763}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MainMenuController, Assembly-CSharp
         m_MethodName: QuitGame
         m_Mode: 1
@@ -1441,7 +1441,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1876773764}
-  - component: {fileID: 1876773763}
+  - component: {fileID: 1876773765}
   m_Layer: 0
   m_Name: MainMenuManager
   m_TagString: Untagged
@@ -1449,38 +1449,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1876773763
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1876773762}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c5229632fa7e7cf4b8e68af1acad7ddc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _menuContainer: {fileID: 0}
-  _slideDuration: 0.35
-  _swipeThreshold: 50
-  _keputusanIcon: {fileID: 0}
-  _utamaIcon: {fileID: 0}
-  _tetapanIcon: {fileID: 0}
-  _keputusanActive: {fileID: 0}
-  _utamaActive: {fileID: 0}
-  _tetapanActive: {fileID: 0}
-  _keputusanInactive: {fileID: 0}
-  _utamaInactive: {fileID: 0}
-  _tetapanInactive: {fileID: 0}
-  _creditsPopup: {fileID: 0}
-  _dimOverlay: {fileID: 0}
-  musicSlider: {fileID: 0}
-  sfxSlider: {fileID: 0}
-  levelSelectSceneName: LevelSelectScene
-  bandarSceneName: Bandar
-  bengkelSceneName: bengkel
-  runcitSceneName: Kedai Runcit
 --- !u!4 &1876773764
 Transform:
   m_ObjectHideFlags: 0
@@ -1496,6 +1464,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1876773765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1876773762}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fa21923135eb9e408544fd26f956df7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainMenuSceneName: Main Menu
 --- !u!1 &1960174427
 GameObject:
   m_ObjectHideFlags: 0

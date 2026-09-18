@@ -37,6 +37,8 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private string bengkelSceneName = "bengkel";
     [SerializeField] private string runcitSceneName = "Kedai Runcit";
 
+    [SerializeField] private string titleSceneName = "Main";
+
     private const string MusicVolumeKey = "MusicVolume";
     private const string SFXVolumeKey = "SFX_VOLUME";
 
@@ -72,6 +74,14 @@ public class MainMenuController : MonoBehaviour
             _currentTabIndex--;
             UpdateTabDisplay(_slideDuration);
         }
+    }
+
+    public void BackToTitleScreen()
+    {
+    PlayButtonSFX();
+    
+    Time.timeScale = 1f;
+    SceneManager.LoadScene("Main");
     }
 
     public void GoToKeputusan()
