@@ -2,11 +2,16 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro; 
 
 public class LevelCompleteManager : MonoBehaviour
 {
-    [Header("UI")]
+    [Header("UI Panels")]
     [SerializeField] private GameObject completePanel;
+
+    [Header("Time & Record UI")]
+    [SerializeField] private TextMeshProUGUI timeTextDisplay; 
+    [SerializeField] private GameObject newRecordBadge;
 
     [Header("Dependencies")]
     [SerializeField] private GameTimerManager timerManager; 
@@ -14,11 +19,10 @@ public class LevelCompleteManager : MonoBehaviour
     [Header("Star Rating System")]
     [SerializeField] private float threeStarTimeLimit = 60f;  
     [SerializeField] private float twoStarTimeLimit = 150f;   
+    [Tooltip("These should be your FILLED star images")]
     [SerializeField] private Image star1Image;
     [SerializeField] private Image star2Image;
     [SerializeField] private Image star3Image;
-    [SerializeField] private Sprite starFilledSprite;
-    [SerializeField] private Sprite starEmptySprite;
     [SerializeField] private float starAnimDuration = 0.35f;
     [SerializeField] private float delayBetweenStars = 0.2f;
 
@@ -34,11 +38,8 @@ public class LevelCompleteManager : MonoBehaviour
     [SerializeField] private string levelSelectSceneName = "LevelSelectScene";
 
     [Header("Save Data Keys (Change for each level)")]
-    [Tooltip("Example: BandarStars, BengkelStars, RuncitStars")]
     [SerializeField] private string levelStarKey = "BandarStars";
-    [Tooltip("Example: BandarBestTime, BengkelBestTime, RuncitBestTime")]
     [SerializeField] private string levelTimeKey = "BandarBestTime";
-    [Tooltip("The level to unlock next. Example: BengkelUnlocked. Leave empty for the final level.")]
     [SerializeField] private string nextLevelUnlockKey = "BengkelUnlocked";
 
     [Header("Optional")]
@@ -52,6 +53,9 @@ public class LevelCompleteManager : MonoBehaviour
     {
         if (completePanel != null)
             completePanel.SetActive(false);
+
+        if (newRecordBadge != null)
+            newRecordBadge.SetActive(false);
 
         if (popupTarget == null && completePanel != null)
             popupTarget = completePanel.GetComponent<RectTransform>();
@@ -142,16 +146,28 @@ public class LevelCompleteManager : MonoBehaviour
         if (timerManager != null)
         {
             float timeTaken = timerManager.GetTimeTaken();
-            Debug.Log("[Star System] Time taken: " + timeTaken + " seconds.");
 
             if (timeTaken <= threeStarTimeLimit)
                 starsEarned = 3;
             else if (timeTaken <= twoStarTimeLimit)
                 starsEarned = 2;
 
+            if (timeTextDisplay != null)
+            {
+                int minutes = Mathf.FloorToInt(timeTaken / 60F);
+                int seconds = Mathf.FloorToInt(timeTaken - minutes * 60);
+                timeTextDisplay.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            }
+
             float savedBestTime = PlayerPrefs.GetFloat(levelTimeKey, 0f);
-            
-            if (savedBestTime == 0f || timeTaken < savedBestTime)
+            bool isNewRecord = (savedBestTime == 0f || timeTaken < savedBestTime);
+
+            if (newRecordBadge != null)
+            {
+                newRecordBadge.SetActive(isNewRecord);
+            }
+
+            if (isNewRecord)
             {
                 PlayerPrefs.SetFloat(levelTimeKey, timeTaken);
                 PlayerPrefs.Save();
@@ -171,20 +187,21 @@ public class LevelCompleteManager : MonoBehaviour
         {
             if (stars[i] == null) continue;
 
-            stars[i].sprite = (i < starsEarned) ? starFilledSprite : starEmptySprite;
-            
-            float timer = 0f;
-            while (timer < starAnimDuration)
+            if (i < starsEarned)
             {
-                timer += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(timer / starAnimDuration);
-                stars[i].transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one, EaseOutBack(t));
-                yield return null;
-            }
+                float timer = 0f;
+                while (timer < starAnimDuration)
+                {
+                    timer += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(timer / starAnimDuration);
+                    stars[i].transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one, EaseOutBack(t));
+                    yield return null;
+                }
 
-            stars[i].transform.localScale = Vector3.one;
-            
-            yield return new WaitForSecondsRealtime(delayBetweenStars);
+                stars[i].transform.localScale = Vector3.one;
+                
+                yield return new WaitForSecondsRealtime(delayBetweenStars);
+            }
         }
     }
 
@@ -199,9 +216,7 @@ public class LevelCompleteManager : MonoBehaviour
     public void GoToBengkel() { PlayButtonSFX(); LoadSceneWithLoading(bengkelSceneName); }
     public void GoToRuncit() { PlayButtonSFX(); LoadSceneWithLoading(runcitSceneName); }
     public void GoToMainMenu() { PlayButtonSFX(); LoadSceneWithLoading(mainMenuSceneName); }
-    
     public void GoToLevelSelect() { PlayButtonSFX(); LoadSceneWithLoading(levelSelectSceneName); } 
-    
     public void RestartLevel() { PlayButtonSFX(); LoadSceneWithLoading(SceneManager.GetActiveScene().name); }
 
     private void LoadSceneWithLoading(string sceneName)
