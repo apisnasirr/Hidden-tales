@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI; 
 using TMPro;
 
 public class GameTimerManager : MonoBehaviour
@@ -9,12 +10,14 @@ public class GameTimerManager : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI timerText;
+    [SerializeField] private Image timerBarFill; 
     [SerializeField] private GameObject gameOverPanel;
 
     [Header("Scene Names")]
     [SerializeField] private string mainMenuSceneName = "Main Menu";
 
     private float currentTime;
+    private float totalTime; 
     private bool timerRunning = false;
     private bool hasGameOver = false;
 
@@ -22,7 +25,8 @@ public class GameTimerManager : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        currentTime = timerMinutes * 60f;
+        totalTime = timerMinutes * 60f; 
+        currentTime = totalTime;
         timerRunning = true;
         hasGameOver = false;
 
@@ -52,13 +56,17 @@ public class GameTimerManager : MonoBehaviour
 
     private void UpdateTimerUI()
     {
-        if (timerText == null)
-            return;
+        if (timerText != null)
+        {
+            int minutes = Mathf.FloorToInt(currentTime / 60f);
+            int seconds = Mathf.FloorToInt(currentTime % 60f);
+            timerText.text = minutes.ToString("00") + ":" + seconds.ToString("00");
+        }
 
-        int minutes = Mathf.FloorToInt(currentTime / 60f);
-        int seconds = Mathf.FloorToInt(currentTime % 60f);
-
-        timerText.text = minutes.ToString("00") + ":" + seconds.ToString("00");
+        if (timerBarFill != null)
+        {
+            timerBarFill.fillAmount = currentTime / totalTime;
+        }
     }
 
     public void ShowGameOver()
@@ -98,10 +106,9 @@ public class GameTimerManager : MonoBehaviour
         timerRunning = false;
     }
 
-    // --- NEW: Gets exactly how many seconds the player took to finish! ---
     public float GetTimeTaken()
     {
-        return (timerMinutes * 60f) - currentTime;
+        return totalTime - currentTime;
     }
 
     private void LoadSceneWithLoading(string sceneName)
