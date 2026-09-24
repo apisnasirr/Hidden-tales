@@ -1,16 +1,26 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems; 
+using DG.Tweening;              
 
-public class InstructionPanelBandar : MonoBehaviour
+public class InstructionPanelBandar : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [Header("UI")]
     [SerializeField] private GameObject instructionPanel;
     [SerializeField] private CanvasGroup instructionCanvasGroup;
 
+    [Header("Swipe Navigation")]
+    [SerializeField] private RectTransform contentContainer; 
+    [SerializeField] private float slideDuration = 0.35f;
+    [SerializeField] private int totalPages = 3;
+
     [Header("Timing")]
     [SerializeField] private float fadeDuration = 0.4f;
 
     private Coroutine fadeRoutine;
+    private int currentPage = 0;
+    private float pageWidth;
+    private Vector2 startDragPosition;
 
     private void Awake()
     {
@@ -23,31 +33,72 @@ public class InstructionPanelBandar : MonoBehaviour
 
     private void Start()
     {
-        // Automatically pop up when the level loads!
+        if (contentContainer != null)
+        {
+            pageWidth = contentContainer.parent.GetComponent<RectTransform>().rect.width;
+        }
+
         OpenInstruction();
     }
 
-    // Link this to the '?' button on the top right
     public void OpenInstruction()
     {
         PlayButtonSFX();
+        
+        currentPage = 0;
+        UpdatePageDisplay(0f); 
+
         FadeInPanel();
     }
 
-    // Link this to the 'X' button on the Panduan panel
     public void CloseInstruction()
     {
         PlayButtonSFX();
         FadeOutPanel();
     }
 
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        startDragPosition = eventData.position;
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        float swipeDistance = eventData.position.x - startDragPosition.x;
+
+        if (Mathf.Abs(swipeDistance) > 50f)
+        {
+            if (swipeDistance > 0 && currentPage > 0)
+            {
+                currentPage--;
+                UpdatePageDisplay(slideDuration);
+            }
+            else if (swipeDistance < 0 && currentPage < totalPages - 1)
+            {
+                currentPage++;
+                UpdatePageDisplay(slideDuration);
+            }
+        }
+    }
+
+    private void UpdatePageDisplay(float duration)
+    {
+        if (contentContainer == null) return;
+
+        float targetX = -(currentPage * pageWidth);
+        contentContainer.DOAnchorPosX(targetX, duration).SetEase(Ease.OutQuint).SetUpdate(true);
+    }
+
     private void FadeOutPanel()
     {
         if (instructionPanel == null || instructionCanvasGroup == null) return;
 
-        if (fadeRoutine != null)
-            StopCoroutine(fadeRoutine);
-
+        if (fadeRoutine != null) StopCoroutine(fadeRoutine);
         fadeRoutine = StartCoroutine(FadeCanvasGroup(instructionCanvasGroup.alpha, 0f, false));
     }
 
@@ -55,8 +106,7 @@ public class InstructionPanelBandar : MonoBehaviour
     {
         if (instructionPanel == null || instructionCanvasGroup == null) return;
 
-        if (fadeRoutine != null)
-            StopCoroutine(fadeRoutine);
+        if (fadeRoutine != null) StopCoroutine(fadeRoutine);
 
         instructionPanel.SetActive(true);
         fadeRoutine = StartCoroutine(FadeCanvasGroup(instructionCanvasGroup.alpha, 1f, true));
@@ -96,7 +146,6 @@ public class InstructionPanelBandar : MonoBehaviour
 
     private void PlayButtonSFX()
     {
-        if (SFXManager.Instance != null)
-            SFXManager.Instance.PlayButtonClick();
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayButtonClick();
     }
 }
