@@ -29,9 +29,8 @@ public class HiddenObjectBandar : MonoBehaviour
     [Header("Magnet")]
     [SerializeField] private float magnetMoveToCenterDuration = 0.3f;
     [SerializeField] private float magnetCenterStayDuration = 0.2f;
-    [SerializeField, Range(0.02f, 0.3f)] private float magnetCenterViewportSpacing = 0.12f;
-    [SerializeField] private float magnetMoveToUIDuration = 0.35f;
-    [SerializeField] private float magnetScaleMultiplier = 1.15f;
+    [SerializeField] private float magnetMoveToUIDuration = 0.6f; 
+    [SerializeField] private float magnetScaleMultiplier = 1.3f; // Scales up slightly
 
     [Header("Bandar Special SFX")]
     [SerializeField] private bool playCatSfx = false;
@@ -69,23 +68,18 @@ public class HiddenObjectBandar : MonoBehaviour
     private void OnEnable()
     {
         RefreshReferences();
-
-        if (manager != null)
-            manager.RegisterObject(this);
+        if (manager != null) manager.RegisterObject(this);
     }
 
     private void OnDisable()
     {
-        if (manager != null)
-            manager.UnregisterObject(this);
+        if (manager != null) manager.UnregisterObject(this);
     }
 
     private void OnMouseDown()
     {
-        if (!enabled || !gameObject.activeInHierarchy)
-            return;
-
-        HandleCorrectClick();
+        if (!enabled || !gameObject.activeInHierarchy) return;
+        HandleCorrectClick(false);
     }
 
     public void RefreshAfterSceneLoad()
@@ -95,76 +89,24 @@ public class HiddenObjectBandar : MonoBehaviour
 
     private void RefreshReferences()
     {
-        if (worldCamera == null)
-            worldCamera = Camera.main;
-
-        if (manager == null)
-            manager = FindObjectOfType<ManagerHiddenObjectBandar>(true);
-
-        if (uiCanvas == null)
-            uiCanvas = FindObjectOfType<Canvas>(true);
+        if (worldCamera == null) worldCamera = Camera.main;
+        if (manager == null) manager = FindObjectOfType<ManagerHiddenObjectBandar>(true);
+        if (uiCanvas == null) uiCanvas = FindObjectOfType<Canvas>(true);
     }
 
-    public bool HandleCorrectClick()
+    // Handles both normal clicks AND magnet pulls
+    public bool HandleCorrectClick(bool isMagnetPull = false)
     {
         RefreshReferences();
 
         if (isFound) return false;
-        if (manager == null) return false;
-        if (worldCamera == null) return false;
-        if (string.IsNullOrEmpty(categoryId)) return false;
+        if (manager == null || worldCamera == null || string.IsNullOrEmpty(categoryId)) return false;
 
         StopHintVisual();
 
         manager.RegisterObject(this);
-        bool accepted = manager.TryMarkFound(this);
-
-        if (!accepted)
-            return false;
-
-        isFound = true;
-
-        if (SFXManager.Instance != null)
-        {
-            SFXManager.Instance.PlayCorrectClick();
-
-            if (playCatSfx)
-                SFXManager.Instance.PlayCat();
-
-            if (playBirdSfx)
-                SFXManager.Instance.PlayBird();
-
-            if (playFrogSfx)
-                SFXManager.Instance.PlayFrog();
-        }
-
-        if (col3D != null) col3D.enabled = false;
-        if (col2D != null) col2D.enabled = false;
-
-        StartCoroutine(PlayFoundAnimation());
-        return true;
-    }
-
-    public void PlayHint()
-    {
-        if (isFound) return;
-
-        StopHintVisual();
-        hintRoutine = StartCoroutine(HintRoutine());
-    }
-
-    public bool BeginMagnetSelection()
-    {
-        RefreshReferences();
-
-        if (isFound) return false;
-        if (manager == null) return false;
-        if (worldCamera == null) return false;
-        if (string.IsNullOrEmpty(categoryId)) return false;
-
-        StopHintVisual();
-
-        manager.RegisterObject(this);
+        
+        // This instantly triggers the UI Tick Animation!
         bool accepted = manager.TryMarkFound(this);
 
         if (!accepted) return false;
@@ -174,55 +116,61 @@ public class HiddenObjectBandar : MonoBehaviour
         if (SFXManager.Instance != null)
         {
             SFXManager.Instance.PlayCorrectClick();
-
-            if (playCatSfx)
-                SFXManager.Instance.PlayCat();
-
-            if (playBirdSfx)
-                SFXManager.Instance.PlayBird();
-
-            if (playFrogSfx)
-                SFXManager.Instance.PlayFrog();
+            if (playCatSfx) SFXManager.Instance.PlayCat();
+            if (playBirdSfx) SFXManager.Instance.PlayBird();
+            if (playFrogSfx) SFXManager.Instance.PlayFrog();
         }
 
         if (col3D != null) col3D.enabled = false;
         if (col2D != null) col2D.enabled = false;
 
+        if (!isMagnetPull)
+        {
+            StartCoroutine(PlayFoundAnimation());
+        }
+
         return true;
     }
 
+    public void PlayHint()
+    {
+        if (isFound) return;
+        StopHintVisual();
+        hintRoutine = StartCoroutine(HintRoutine());
+    }
+
+    // Called by the Manager when Magnet is used
+    public bool BeginMagnetSelection()
+    {
+        // Triggers the tick animation and marks it found instantly
+        return HandleCorrectClick(true);
+    }
+
+    // Scales the item up in place (No movement)
     public IEnumerator PlayMagnetMoveToCenter(int magnetIndex, int totalTargets)
     {
-        Vector3 startPos = transform.position;
         Vector3 startScale = transform.localScale;
-
-        Vector3 centerPos = GetMagnetCenterWorldTarget(magnetIndex, totalTargets);
-        Vector3 centerScale = defaultScale * magnetScaleMultiplier;
+        Vector3 targetScale = defaultScale * magnetScaleMultiplier;
 
         float time = 0f;
-
         while (time < magnetMoveToCenterDuration)
         {
             time += Time.deltaTime;
             float t = Mathf.Clamp01(time / magnetMoveToCenterDuration);
-
-            transform.position = Vector3.Lerp(startPos, centerPos, t);
-            transform.localScale = Vector3.Lerp(startScale, centerScale, t);
-
+            transform.localScale = Vector3.Lerp(startScale, targetScale, t);
             yield return null;
         }
 
-        transform.position = centerPos;
-        transform.localScale = centerScale;
+        transform.localScale = targetScale;
 
         if (magnetCenterStayDuration > 0f)
             yield return new WaitForSeconds(magnetCenterStayDuration);
     }
 
+    // Flies directly down to the UI slot, shrinking along the way
     public IEnumerator PlayMagnetMoveToUI()
     {
         manager.CenterTargetUI(categoryId);
-
         Canvas.ForceUpdateCanvases();
         yield return null;
 
@@ -231,7 +179,6 @@ public class HiddenObjectBandar : MonoBehaviour
         Vector3 endScale = defaultScale * scaleToUIRatio;
 
         float time = 0f;
-
         while (time < magnetMoveToUIDuration)
         {
             time += Time.deltaTime;
@@ -239,6 +186,7 @@ public class HiddenObjectBandar : MonoBehaviour
 
             Vector3 uiWorldTarget = GetCurrentUIWorldTarget();
 
+            // Straight line movement, no spinning or wandering
             transform.position = Vector3.Lerp(startPos, uiWorldTarget, t);
             transform.localScale = Vector3.Lerp(startScale, endScale, t);
 
@@ -249,30 +197,16 @@ public class HiddenObjectBandar : MonoBehaviour
         transform.localScale = endScale;
 
         manager.CompleteToUI(categoryId);
-
         gameObject.SetActive(false);
-    }
-
-    private Vector3 GetMagnetCenterWorldTarget(int magnetIndex, int totalTargets)
-    {
-        totalTargets = Mathf.Max(1, totalTargets);
-
-        float slotOffset = magnetIndex - (totalTargets - 1) * 0.5f;
-        float targetViewportX = centerViewportX + slotOffset * magnetCenterViewportSpacing;
-        targetViewportX = Mathf.Clamp(targetViewportX, 0.1f, 0.9f);
-
-        return GetViewportWorldPosition(targetViewportX, centerViewportY);
     }
 
     private IEnumerator HintRoutine()
     {
         float time = 0f;
-
         while (time < hintDuration)
         {
             time += Time.deltaTime;
             float pulse = Mathf.PingPong(time * hintPulseSpeed, 1f);
-
             transform.localScale = Vector3.Lerp(defaultScale, defaultScale * hintScaleMultiplier, pulse);
 
             if (spriteRenderer != null)
@@ -282,10 +216,7 @@ public class HiddenObjectBandar : MonoBehaviour
         }
 
         transform.localScale = defaultScale;
-
-        if (spriteRenderer != null)
-            spriteRenderer.color = defaultColor;
-
+        if (spriteRenderer != null) spriteRenderer.color = defaultColor;
         hintRoutine = null;
     }
 
@@ -296,31 +227,24 @@ public class HiddenObjectBandar : MonoBehaviour
             StopCoroutine(hintRoutine);
             hintRoutine = null;
         }
-
         transform.localScale = defaultScale;
-
-        if (spriteRenderer != null)
-            spriteRenderer.color = defaultColor;
+        if (spriteRenderer != null) spriteRenderer.color = defaultColor;
     }
 
     private IEnumerator PlayFoundAnimation()
     {
         Vector3 startPos = transform.position;
         Vector3 startScale = defaultScale;
-
         Vector3 centerPos = GetViewportWorldPosition(centerViewportX, centerViewportY);
         Vector3 bigScale = startScale * scaleUpMultiplier;
 
         float time = 0f;
-
         while (time < moveToCenterDuration)
         {
             time += Time.deltaTime;
             float t = Mathf.Clamp01(time / moveToCenterDuration);
-
             transform.position = Vector3.Lerp(startPos, centerPos, t);
             transform.localScale = Vector3.Lerp(startScale, bigScale, t);
-
             yield return null;
         }
 
@@ -330,7 +254,6 @@ public class HiddenObjectBandar : MonoBehaviour
         yield return new WaitForSeconds(stayDuration);
 
         manager.CenterTargetUI(categoryId);
-
         Canvas.ForceUpdateCanvases();
         yield return null;
 
@@ -343,12 +266,9 @@ public class HiddenObjectBandar : MonoBehaviour
         {
             time += Time.deltaTime;
             float t = Mathf.Clamp01(time / moveToUIDuration);
-
             Vector3 uiWorldTarget = GetCurrentUIWorldTarget();
-
             transform.position = Vector3.Lerp(flyStart, uiWorldTarget, t);
             transform.localScale = Vector3.Lerp(flyStartScale, flyEndScale, t);
-
             yield return null;
         }
 
@@ -356,17 +276,14 @@ public class HiddenObjectBandar : MonoBehaviour
         transform.localScale = flyEndScale;
 
         manager.CompleteToUI(categoryId);
-
         gameObject.SetActive(false);
     }
 
     private Vector3 GetViewportWorldPosition(float viewportX, float viewportY)
     {
         float distanceFromCamera = Mathf.Abs(transform.position.z - worldCamera.transform.position.z);
-
         Vector3 viewportPos = new Vector3(viewportX, viewportY, distanceFromCamera);
         Vector3 worldPos = worldCamera.ViewportToWorldPoint(viewportPos);
-
         worldPos.z = transform.position.z;
         return worldPos;
     }
@@ -375,9 +292,7 @@ public class HiddenObjectBandar : MonoBehaviour
     {
         Camera currentUICamera = GetUICamera();
         Vector2 screenPos = manager.GetTargetUIScreenPosition(categoryId, currentUICamera);
-
         float distanceFromCamera = Mathf.Abs(transform.position.z - worldCamera.transform.position.z);
-
         Vector3 worldPos = worldCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, distanceFromCamera));
         worldPos.z = transform.position.z;
         return worldPos;
@@ -385,12 +300,8 @@ public class HiddenObjectBandar : MonoBehaviour
 
     private Camera GetUICamera()
     {
-        if (uiCanvas == null)
-            return null;
-
-        if (uiCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
-            return null;
-
+        if (uiCanvas == null) return null;
+        if (uiCanvas.renderMode == RenderMode.ScreenSpaceOverlay) return null;
         return uiCanvas.worldCamera;
     }
 }

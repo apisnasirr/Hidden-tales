@@ -20,6 +20,9 @@ public class GameTimerManager : MonoBehaviour
     private float totalTime; 
     private bool timerRunning = false;
     private bool hasGameOver = false;
+    private bool isFrozen = false;
+    private Coroutine freezeRoutine;
+    private Color originalTextColor;
 
     private void Awake()
     {
@@ -33,15 +36,20 @@ public class GameTimerManager : MonoBehaviour
         if (gameOverPanel != null)
             gameOverPanel.SetActive(false);
 
+        if (timerText != null) 
+            originalTextColor = timerText.color; 
+
         UpdateTimerUI();
     }
 
     private void Update()
     {
-        if (!timerRunning || hasGameOver)
-            return;
+        if (!timerRunning || hasGameOver) return;
 
-        currentTime -= Time.deltaTime;
+        if (!isFrozen)
+        {
+            currentTime -= Time.deltaTime;
+        }
 
         if (currentTime <= 0f)
         {
@@ -128,5 +136,30 @@ public class GameTimerManager : MonoBehaviour
     {
         if (SFXManager.Instance != null)
             SFXManager.Instance.PlayButtonClick();
+    }
+
+    public bool ApplyFreezeTime(float duration)
+    {
+        if (hasGameOver || !timerRunning || isFrozen) 
+            return false; 
+
+        if (freezeRoutine != null) 
+            StopCoroutine(freezeRoutine);
+            
+        freezeRoutine = StartCoroutine(FreezeRoutine(duration));
+        return true;
+    }
+
+    private System.Collections.IEnumerator FreezeRoutine(float duration)
+    {
+        isFrozen = true;
+        
+        if (timerText != null) timerText.color = Color.cyan;
+
+        yield return new WaitForSeconds(duration);
+
+        isFrozen = false;
+        
+        if (timerText != null) timerText.color = originalTextColor; 
     }
 }

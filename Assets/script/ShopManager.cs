@@ -32,7 +32,6 @@ public class ShopManager : MonoBehaviour
 
     public bool IsShopOpen => shopPanel != null && shopPanel.activeInHierarchy;
 
-    // Compatibility untuk script lama
     public bool IgnoreNextWrongClick { get; private set; }
 
     private void Awake()
@@ -207,7 +206,6 @@ public class ShopManager : MonoBehaviour
         TryBuyItem(item.itemId, item.itemName, item.price, item.amount);
     }
 
-    // Optional shortcut kalau lebih senang pilih function tanpa isi int
     public void BuyItem0()
     {
         BuyItemByIndex(0);

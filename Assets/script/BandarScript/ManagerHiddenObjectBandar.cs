@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using DG.Tweening;
 
 public class ManagerHiddenObjectBandar : MonoBehaviour
 {
@@ -25,20 +26,8 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
     [Header("Focus Hint")]
     [SerializeField] private float focusHintMarkerDuration = 1.5f;
 
-    [Header("Zoom Hint")]
-    [SerializeField] private float zoomHintSize = 3.5f;
-    [SerializeField] private float zoomHintHoldDuration = 1.8f;
-    [SerializeField] private float zoomHintDelayBeforePulse = 0.35f;
-
-    [Header("Zoom Hint Item Highlight")]
-    [SerializeField] private float zoomHintPulseDuration = 1f;
-    [SerializeField] private float zoomHintPulseSpeed = 5f;
-    [SerializeField] private float zoomHintBiggerScale = 1.12f;
-    [SerializeField] private float zoomHintSmallerScale = 0.95f;
-    [SerializeField] private Color zoomHintColor = Color.yellow;
-
     [Header("Magnet")]
-    [SerializeField] private int magnetPullCount = 2;
+    [SerializeField] private int magnetPullCount = 2; // Can be set to 1 in inspector if you only want it to pull one item
     [SerializeField] private float magnetDelayBetweenObjects = 0.08f;
 
     private readonly List<HiddenObjectBandar> allObjects = new List<HiddenObjectBandar>();
@@ -195,45 +184,26 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
     private void PlayTickAnimation(string categoryId)
     {
-        if (string.IsNullOrEmpty(categoryId))
-            return;
+        if (string.IsNullOrEmpty(categoryId)) return;
 
-        if (tickAnimationTargets == null || tickAnimationTargets.Length == 0)
-        {
-            Debug.LogWarning("[ManagerHiddenObjectBandar] Tick Animation Targets kosong.");
-            return;
-        }
+        if (tickAnimationTargets == null || tickAnimationTargets.Length == 0) return;
 
         for (int i = 0; i < tickAnimationTargets.Length; i++)
         {
             TickAnimationTarget target = tickAnimationTargets[i];
 
-            if (target == null)
-                continue;
-
-            if (target.categoryId != categoryId)
-                continue;
+            if (target == null || target.categoryId != categoryId) continue;
 
             if (target.tickAnimation != null)
-            {
                 target.tickAnimation.Play();
-                Debug.Log("[ManagerHiddenObjectBandar] Tick animation dimainkan untuk category: " + categoryId);
-            }
-            else
-            {
-                Debug.LogWarning("[ManagerHiddenObjectBandar] Tick animation belum assign untuk category: " + categoryId);
-            }
 
             return;
         }
-
-        Debug.LogWarning("[ManagerHiddenObjectBandar] Tiada tick animation target untuk category: " + categoryId);
     }
 
     public object CenterTargetUI(HiddenObjectBandar hiddenObject)
     {
         if (hiddenObject == null) return null;
-
         RefreshReferences();
 
         if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
@@ -246,31 +216,22 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
     {
         HiddenObjectBandar target = FindObjectByCategory(targetId);
         if (target == null) return null;
-
         return CenterTargetUI(target);
     }
 
-    public void CompleteToUI(HiddenObjectBandar hiddenObject)
-    {
-    }
+    public void CompleteToUI(HiddenObjectBandar hiddenObject) { }
 
-    public void CompleteToUI(string targetId)
-    {
-    }
+    public void CompleteToUI(string targetId) { }
 
     public Vector3 GetTargetUIScreenPosition(HiddenObjectBandar hiddenObject)
     {
-        if (hiddenObject == null)
-            return Vector3.zero;
-
+        if (hiddenObject == null) return Vector3.zero;
         RefreshReferences();
 
         if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
             return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, GetUICamera());
 
-        if (mainCamera == null)
-            return hiddenObject.transform.position;
-
+        if (mainCamera == null) return hiddenObject.transform.position;
         return mainCamera.WorldToScreenPoint(hiddenObject.transform.position);
     }
 
@@ -289,39 +250,30 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
         HiddenObjectBandar target = FindObjectByCategory(targetId);
 
-        if (target == null)
-            return Vector3.zero;
-
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (mainCamera == null)
-            return target.transform.position;
+        if (target == null) return Vector3.zero;
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera == null) return target.transform.position;
 
         return mainCamera.WorldToScreenPoint(target.transform.position);
     }
 
     public Vector3 GetTargetUIScreenPosition(HiddenObjectBandar hiddenObject, Camera uiCamera)
     {
-        if (hiddenObject == null)
-            return Vector3.zero;
+        if (hiddenObject == null) return Vector3.zero;
 
         if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
             return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, uiCamera);
 
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (mainCamera == null)
-            return hiddenObject.transform.position;
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera == null) return hiddenObject.transform.position;
 
         return mainCamera.WorldToScreenPoint(hiddenObject.transform.position);
     }
 
+    // --- FOCUS HINT ---
     public bool UseFocusHint()
     {
         RefreshReferences();
-
         HiddenObjectBandar target = GetFirstUnfoundObject();
 
         if (target == null)
@@ -330,19 +282,12 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
             target = GetFirstUnfoundObject();
         }
 
-        if (target == null)
-        {
-            Debug.LogWarning("UseFocusHint gagal: tiada hidden object yang belum dijumpai.");
-            return false;
-        }
+        if (target == null) return false;
 
-        Debug.Log("FocusHint target = " + target.name);
-
+        // FIXED: Uses your Camera Controller so it doesn't snap!
         if (cameraController != null)
             cameraController.FocusOnWorldPosition(target.transform.position);
-        else
-            MoveCameraInstant(target.transform.position);
-
+        
         if (hintMarkerUI != null)
             hintMarkerUI.ShowOnTarget(target.transform, focusHintMarkerDuration);
         else
@@ -354,32 +299,12 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
         return true;
     }
 
-    public bool UseZoomHint()
+    // --- MAGNET HINT ---
+    public bool UseMagnetHint()
     {
         RefreshReferences();
 
-        HiddenObjectBandar target = GetFirstUnfoundObject();
-
-        if (target == null)
-        {
-            AutoRegisterSceneObjects();
-            target = GetFirstUnfoundObject();
-        }
-
-        if (target == null)
-        {
-            Debug.LogWarning("UseZoomHint gagal: tiada hidden object yang belum dijumpai.");
-            return false;
-        }
-
-        Debug.Log("ZoomHint target = " + target.name);
-
-        StartCameraHintRoutine(ZoomHintRoutine(target));
-        return true;
-    }
-
-    public bool UseMagnetPower()
-    {
+        // Get the target(s) based on your original logic
         HiddenObjectBandar[] targets = GetUnfoundObjects(magnetPullCount);
 
         if (targets.Length == 0)
@@ -388,140 +313,34 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
             targets = GetUnfoundObjects(magnetPullCount);
         }
 
-        if (targets.Length == 0)
+        if (targets.Length == 0) return false;
+
+        // Pan to the first target before pulling
+        if (cameraController != null && targets[0] != null)
         {
-            Debug.LogWarning("UseMagnetPower gagal: tiada hidden object yang belum dijumpai.");
-            return false;
+            cameraController.FocusOnWorldPosition(targets[0].transform.position);
         }
 
         StartCoroutine(MagnetRoutine(targets));
         return true;
     }
 
-    private IEnumerator ZoomItemPulseRoutine(HiddenObjectBandar target)
-    {
-        if (target == null)
-            yield break;
-
-        Transform targetTransform = target.transform;
-        SpriteRenderer spriteRenderer = target.GetComponent<SpriteRenderer>();
-
-        Vector3 originalScale = targetTransform.localScale;
-        Vector3 biggerScale = originalScale * zoomHintBiggerScale;
-        Vector3 smallerScale = originalScale * zoomHintSmallerScale;
-
-        Color originalColor = Color.white;
-
-        if (spriteRenderer != null)
-        {
-            originalColor = spriteRenderer.color;
-            spriteRenderer.color = zoomHintColor;
-        }
-
-        float timer = 0f;
-
-        while (timer < zoomHintPulseDuration)
-        {
-            if (target == null)
-                yield break;
-
-            timer += Time.unscaledDeltaTime;
-
-            float pulse = Mathf.PingPong(timer * zoomHintPulseSpeed, 1f);
-            targetTransform.localScale = Vector3.Lerp(smallerScale, biggerScale, pulse);
-
-            yield return null;
-        }
-
-        targetTransform.localScale = originalScale;
-
-        if (spriteRenderer != null)
-            spriteRenderer.color = originalColor;
-
-        zoomPulseRoutine = null;
-    }
-
-    private void StartCameraHintRoutine(IEnumerator routine)
-    {
-        if (cameraHintRoutine != null)
-            StopCoroutine(cameraHintRoutine);
-
-        cameraHintRoutine = StartCoroutine(routine);
-    }
-
-    private IEnumerator ZoomHintRoutine(HiddenObjectBandar target)
-    {
-        if (target == null) yield break;
-
-        RefreshReferences();
-
-        if (cameraController != null)
-        {
-            cameraController.FocusOnWorldPosition(target.transform.position);
-            cameraController.SetZoomTarget(zoomHintSize);
-        }
-        else
-        {
-            MoveCameraInstant(target.transform.position);
-            SetCameraZoomInstant(zoomHintSize);
-        }
-
-        if (zoomHintDelayBeforePulse > 0f)
-            yield return new WaitForSecondsRealtime(zoomHintDelayBeforePulse);
-
-        if (zoomPulseRoutine != null)
-            StopCoroutine(zoomPulseRoutine);
-
-        zoomPulseRoutine = StartCoroutine(ZoomItemPulseRoutine(target));
-
-        if (zoomHintHoldDuration > 0f)
-            yield return new WaitForSecondsRealtime(zoomHintHoldDuration);
-
-        if (cameraController != null)
-            cameraController.ResetZoom();
-
-        cameraHintRoutine = null;
-    }
-
-    private void MoveCameraInstant(Vector3 targetPosition)
-    {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (mainCamera == null)
-            return;
-
-        Vector3 camPos = mainCamera.transform.position;
-        mainCamera.transform.position = new Vector3(targetPosition.x, targetPosition.y, camPos.z);
-    }
-
-    private void SetCameraZoomInstant(float size)
-    {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (mainCamera == null)
-            return;
-
-        if (mainCamera.orthographic)
-            mainCamera.orthographicSize = size;
-        else
-            mainCamera.fieldOfView = size;
-    }
-
     private IEnumerator MagnetRoutine(HiddenObjectBandar[] targets)
     {
         int totalTargets = targets.Length;
+
+        // Wait a tiny bit for the camera to pan before the item flies
+        yield return new WaitForSeconds(0.4f); 
 
         for (int i = 0; i < targets.Length; i++)
         {
             HiddenObjectBandar target = targets[i];
 
-            if (target == null)
-                continue;
+            if (target == null) continue;
 
             if (target.BeginMagnetSelection())
             {
+                // Uses the animation logic built into your item script!
                 yield return target.PlayMagnetMoveToCenter(i, totalTargets);
                 yield return target.PlayMagnetMoveToUI();
             }
@@ -535,106 +354,58 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
         for (int i = 0; i < allObjects.Count; i++)
         {
             HiddenObjectBandar obj = allObjects[i];
-
-            if (obj == null) continue;
-            if (foundObjects.Contains(obj)) continue;
-            if (!obj.gameObject.activeInHierarchy) continue;
-            if (obj.IsFound) continue;
-
+            if (obj == null || foundObjects.Contains(obj) || !obj.gameObject.activeInHierarchy || obj.IsFound) continue;
             return obj;
         }
-
         return null;
     }
 
     private HiddenObjectBandar[] GetUnfoundObjects(int count)
     {
         List<HiddenObjectBandar> result = new List<HiddenObjectBandar>();
-
         for (int i = 0; i < allObjects.Count; i++)
         {
             HiddenObjectBandar obj = allObjects[i];
-
-            if (obj == null) continue;
-            if (foundObjects.Contains(obj)) continue;
-            if (!obj.gameObject.activeInHierarchy) continue;
-            if (obj.IsFound) continue;
-
+            if (obj == null || foundObjects.Contains(obj) || !obj.gameObject.activeInHierarchy || obj.IsFound) continue;
+            
             result.Add(obj);
-
-            if (result.Count >= count)
-                break;
+            if (result.Count >= count) break;
         }
-
         return result.ToArray();
     }
 
     private HiddenObjectBandar FindObjectByCategory(string categoryId)
     {
-        if (string.IsNullOrEmpty(categoryId))
-            return null;
-
+        if (string.IsNullOrEmpty(categoryId)) return null;
         for (int i = 0; i < allObjects.Count; i++)
         {
-            HiddenObjectBandar obj = allObjects[i];
-
-            if (obj == null) continue;
-
-            if (obj.CategoryId == categoryId)
-                return obj;
+            if (allObjects[i] != null && allObjects[i].CategoryId == categoryId)
+                return allObjects[i];
         }
-
         return null;
     }
 
     private HiddenObjectBandar FindObjectByCategoryAndInstance(string categoryId, int instanceId)
     {
-        if (string.IsNullOrEmpty(categoryId))
-            return null;
-
+        if (string.IsNullOrEmpty(categoryId)) return null;
         for (int i = 0; i < allObjects.Count; i++)
         {
-            HiddenObjectBandar obj = allObjects[i];
-
-            if (obj == null) continue;
-            if (obj.CategoryId != categoryId) continue;
-
-            if (obj.GetInstanceID() == instanceId)
-                return obj;
+            if (allObjects[i] != null && allObjects[i].CategoryId == categoryId && allObjects[i].GetInstanceID() == instanceId)
+                return allObjects[i];
         }
-
-        for (int i = 0; i < allObjects.Count; i++)
-        {
-            HiddenObjectBandar obj = allObjects[i];
-
-            if (obj == null) continue;
-
-            if (obj.CategoryId == categoryId)
-                return obj;
-        }
-
-        return null;
+        return FindObjectByCategory(categoryId);
     }
 
     private Camera GetUICamera()
     {
-        if (uiManager == null)
-            return null;
-
+        if (uiManager == null) return null;
         Canvas canvas = uiManager.GetComponentInParent<Canvas>();
-
-        if (canvas == null)
-            return null;
-
-        if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-            return null;
-
+        if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay) return null;
         return canvas.worldCamera;
     }
 
     private void TriggerLevelComplete()
     {
-        // --- ADDED DEBUG LOGS HERE ---
         if (levelCompleteManager != null)
         {
             Debug.Log("[ManagerBandar] Calling ShowLevelComplete() on the LevelCompleteManager now!");

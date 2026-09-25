@@ -4,30 +4,32 @@ using UnityEngine.UI;
 
 public class PowerUpLimitUIBengkel : MonoBehaviour
 {
-    [Header("Manager")]
+    [Header("Managers")]
     [SerializeField] private ManagerHiddenObjectBengkel manager;
+    [SerializeField] private GameTimerManager timerManager; // Handles the Freeze Time
 
     [Header("Shop Item IDs")]
     [SerializeField] private string focusHintItemId = "focus_hint";
-    [SerializeField] private string zoomHintItemId = "zoom_hint";
-    [SerializeField] private string magnetItemId = "magnet";
+    [SerializeField] private string magnetHintItemId = "magnet_hint";
+    [SerializeField] private string freezeTimeItemId = "freeze_time";
 
     [Header("Focus Hint UI")]
     [SerializeField] private TMP_Text focusHintCountText;
     [SerializeField] private Button focusHintButton;
     [SerializeField] private Image focusHintIcon;
 
-    [Header("Zoom Hint UI")]
-    [SerializeField] private TMP_Text zoomHintCountText;
-    [SerializeField] private Button zoomHintButton;
-    [SerializeField] private Image zoomHintIcon;
-
     [Header("Magnet UI")]
     [SerializeField] private TMP_Text magnetCountText;
     [SerializeField] private Button magnetButton;
     [SerializeField] private Image magnetIcon;
 
-    [Header("Color")]
+    [Header("Freeze Time UI")]
+    [SerializeField] private TMP_Text freezeTimeCountText;
+    [SerializeField] private Button freezeTimeButton;
+    [SerializeField] private Image freezeTimeIcon;
+
+    [Header("Settings")]
+    [SerializeField] private float freezeDuration = 10f; // 10 seconds of frozen time
     [SerializeField] private Color activeColor = Color.white;
     [SerializeField] private Color disabledColor = Color.gray;
 
@@ -56,12 +58,12 @@ public class PowerUpLimitUIBengkel : MonoBehaviour
         if (CurrencyManager.Instance == null) return;
 
         int focusCount = CurrencyManager.Instance.GetItemAmount(focusHintItemId);
-        int zoomCount = CurrencyManager.Instance.GetItemAmount(zoomHintItemId);
-        int magnetCount = CurrencyManager.Instance.GetItemAmount(magnetItemId);
+        int magnetCount = CurrencyManager.Instance.GetItemAmount(magnetHintItemId);
+        int freezeCount = CurrencyManager.Instance.GetItemAmount(freezeTimeItemId);
 
         RefreshOne(focusCount, focusHintCountText, focusHintButton, focusHintIcon);
-        RefreshOne(zoomCount, zoomHintCountText, zoomHintButton, zoomHintIcon);
         RefreshOne(magnetCount, magnetCountText, magnetButton, magnetIcon);
+        RefreshOne(freezeCount, freezeTimeCountText, freezeTimeButton, freezeTimeIcon);
     }
 
     public void OnClickFocusHint()
@@ -69,11 +71,7 @@ public class PowerUpLimitUIBengkel : MonoBehaviour
         if (CurrencyManager.Instance == null || manager == null) return;
 
         int currentAmount = CurrencyManager.Instance.GetItemAmount(focusHintItemId);
-        if (currentAmount <= 0)
-        {
-            RefreshUI();
-            return;
-        }
+        if (currentAmount <= 0) return;
 
         bool success = manager.UseFocusHint();
         if (!success) return;
@@ -82,39 +80,31 @@ public class PowerUpLimitUIBengkel : MonoBehaviour
         RefreshUI();
     }
 
-    public void OnClickZoomHint()
-    {
-        if (CurrencyManager.Instance == null || manager == null) return;
-
-        int currentAmount = CurrencyManager.Instance.GetItemAmount(zoomHintItemId);
-        if (currentAmount <= 0)
-        {
-            RefreshUI();
-            return;
-        }
-
-        bool success = manager.UseZoomHint();
-        if (!success) return;
-
-        CurrencyManager.Instance.UseItem(zoomHintItemId, 1);
-        RefreshUI();
-    }
-
     public void OnClickMagnet()
     {
         if (CurrencyManager.Instance == null || manager == null) return;
 
-        int currentAmount = CurrencyManager.Instance.GetItemAmount(magnetItemId);
-        if (currentAmount <= 0)
-        {
-            RefreshUI();
-            return;
-        }
+        int currentAmount = CurrencyManager.Instance.GetItemAmount(magnetHintItemId);
+        if (currentAmount <= 0) return;
 
-        bool success = manager.UseMagnetPower();
+        bool success = manager.UseMagnetHint(); 
         if (!success) return;
 
-        CurrencyManager.Instance.UseItem(magnetItemId, 1);
+        CurrencyManager.Instance.UseItem(magnetHintItemId, 1);
+        RefreshUI();
+    }
+
+    public void OnClickFreezeTime()
+    {
+        if (CurrencyManager.Instance == null || timerManager == null) return;
+
+        int currentAmount = CurrencyManager.Instance.GetItemAmount(freezeTimeItemId);
+        if (currentAmount <= 0) return;
+
+        bool success = timerManager.ApplyFreezeTime(freezeDuration);
+        if (!success) return;
+
+        CurrencyManager.Instance.UseItem(freezeTimeItemId, 1);
         RefreshUI();
     }
 
@@ -122,16 +112,9 @@ public class PowerUpLimitUIBengkel : MonoBehaviour
     {
         bool canUse = remaining > 0;
 
-        if (countText != null)
-            countText.text = remaining.ToString();
-
-        if (button != null)
-            button.interactable = canUse;
-
-        if (icon != null)
-            icon.color = canUse ? activeColor : disabledColor;
-
-        if (countText != null)
-            countText.color = canUse ? activeColor : disabledColor;
+        if (countText != null) countText.text = remaining.ToString();
+        if (button != null) button.interactable = canUse;
+        if (icon != null) icon.color = canUse ? activeColor : disabledColor;
+        if (countText != null) countText.color = canUse ? activeColor : disabledColor;
     }
 }

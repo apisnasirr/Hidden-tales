@@ -48,21 +48,19 @@ public class ShopItemUI : MonoBehaviour
 
         Debug.Log("[ShopItemUI] BUY CLICK -> " + itemId + " | price: " + price + " | amount: " + amount);
 
-        // 1. Try to buy the item first
         bool success = shopManager.TryBuyItem(itemId, itemName, price, amount);
 
-        // 2. Play the correct sound based on whether it worked!
         if (success)
         {
             Debug.Log("[ShopItemUI] Buy berjaya untuk item: " + itemId);
             if (SFXManager.Instance != null)
-                SFXManager.Instance.PlayCoinUse(); // Plays your dedicated buying sound!
+                SFXManager.Instance.PlayCoinUse(); 
         }
         else
         {
             Debug.LogWarning("[ShopItemUI] Buy gagal untuk item: " + itemId);
             if (SFXManager.Instance != null)
-                SFXManager.Instance.PlayNotEnoughCoin(); // Plays your error/broke sound!
+                SFXManager.Instance.PlayNotEnoughCoin(); 
         }
 
         isBuying = false;

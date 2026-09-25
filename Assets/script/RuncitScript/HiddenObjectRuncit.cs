@@ -29,11 +29,11 @@ public class HiddenObjectRuncit : MonoBehaviour
     [Header("Magnet")]
     [SerializeField] private float magnetMoveToCenterDuration = 0.3f;
     [SerializeField] private float magnetCenterStayDuration = 0.2f;
-    [SerializeField, Range(0.02f, 0.3f)] private float magnetCenterViewportSpacing = 0.12f;
-    [SerializeField] private float magnetMoveToUIDuration = 0.35f;
-    [SerializeField] private float magnetScaleMultiplier = 1.15f;
+    [SerializeField] private float magnetMoveToUIDuration = 0.6f; 
+    [SerializeField] private float magnetScaleMultiplier = 1.3f; 
 
     private bool isFound = false;
+    private bool isMagnetTarget = false; 
     private Collider col3D;
     private Collider2D col2D;
     private SpriteRenderer spriteRenderer;
@@ -64,22 +64,17 @@ public class HiddenObjectRuncit : MonoBehaviour
     private void OnEnable()
     {
         RefreshReferences();
-
-        if (manager != null)
-            manager.RegisterObject(this);
+        if (manager != null) manager.RegisterObject(this);
     }
 
     private void OnDisable()
     {
-        if (manager != null)
-            manager.UnregisterObject(this);
+        if (manager != null) manager.UnregisterObject(this);
     }
 
     private void OnMouseDown()
     {
-        if (!enabled || !gameObject.activeInHierarchy)
-            return;
-
+        if (!enabled || !gameObject.activeInHierarchy) return;
         HandleCorrectClick();
     }
 
@@ -90,65 +85,17 @@ public class HiddenObjectRuncit : MonoBehaviour
 
     private void RefreshReferences()
     {
-        if (worldCamera == null)
-            worldCamera = Camera.main;
-
-        if (manager == null)
-            manager = FindObjectOfType<ManagerHiddenObjectRuncit>(true);
-
-        if (uiCanvas == null)
-            uiCanvas = FindObjectOfType<Canvas>(true);
+        if (worldCamera == null) worldCamera = Camera.main;
+        if (manager == null) manager = FindObjectOfType<ManagerHiddenObjectRuncit>(true);
+        if (uiCanvas == null) uiCanvas = FindObjectOfType<Canvas>(true);
     }
 
     public bool HandleCorrectClick()
     {
         RefreshReferences();
 
-        if (isFound) return false;
-        if (manager == null) return false;
-        if (worldCamera == null) return false;
-        if (string.IsNullOrEmpty(categoryId)) return false;
-
-        StopHintVisual();
-
-        manager.RegisterObject(this);
-        bool accepted = manager.TryMarkFound(categoryId, GetInstanceID());
-
-        if (!accepted)
-            return false;
-
-        isFound = true;
-
-        WrongClickDetectorRuncit detector = FindObjectOfType<WrongClickDetectorRuncit>();
-        if (detector != null)
-            detector.RegisterValidClick();
-
-        if (SFXManager.Instance != null)
-            SFXManager.Instance.PlayCorrectClick();
-
-        if (col3D != null) col3D.enabled = false;
-        if (col2D != null) col2D.enabled = false;
-
-        StartCoroutine(PlayFoundAnimation());
-        return true;
-    }
-
-    public void PlayHint()
-    {
-        if (isFound) return;
-
-        StopHintVisual();
-        hintRoutine = StartCoroutine(HintRoutine());
-    }
-
-    public bool BeginMagnetSelection()
-    {
-        RefreshReferences();
-
-        if (isFound) return false;
-        if (manager == null) return false;
-        if (worldCamera == null) return false;
-        if (string.IsNullOrEmpty(categoryId)) return false;
+        if (isFound || isMagnetTarget) return false;
+        if (manager == null || worldCamera == null || string.IsNullOrEmpty(categoryId)) return false;
 
         StopHintVisual();
 
@@ -160,24 +107,43 @@ public class HiddenObjectRuncit : MonoBehaviour
         isFound = true;
 
         WrongClickDetectorRuncit detector = FindObjectOfType<WrongClickDetectorRuncit>();
-        if (detector != null)
-            detector.RegisterValidClick();
+        if (detector != null) detector.RegisterValidClick();
 
-        if (SFXManager.Instance != null)
-            SFXManager.Instance.PlayCorrectClick();
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayCorrectClick();
 
         if (col3D != null) col3D.enabled = false;
         if (col2D != null) col2D.enabled = false;
 
+        StartCoroutine(PlayFoundAnimation());
+        return true;
+    }
+
+    public void PlayHint()
+    {
+        if (isFound || isMagnetTarget) return;
+
+        StopHintVisual();
+        hintRoutine = StartCoroutine(HintRoutine());
+    }
+
+    public bool BeginMagnetSelection()
+    {
+        RefreshReferences();
+
+        if (isFound || isMagnetTarget || string.IsNullOrEmpty(categoryId)) return false;
+
+        // Lock the item so the player can't click it while it flies!
+        isMagnetTarget = true;
+        if (col3D != null) col3D.enabled = false;
+        if (col2D != null) col2D.enabled = false;
+
+        StopHintVisual();
         return true;
     }
 
     public IEnumerator PlayMagnetMoveToCenter(int magnetIndex, int totalTargets)
     {
-        Vector3 startPos = transform.position;
         Vector3 startScale = transform.localScale;
-
-        Vector3 centerPos = GetMagnetCenterWorldTarget(magnetIndex, totalTargets);
         Vector3 centerScale = defaultScale * magnetScaleMultiplier;
 
         float time = 0f;
@@ -186,14 +152,10 @@ public class HiddenObjectRuncit : MonoBehaviour
         {
             time += Time.deltaTime;
             float t = Mathf.Clamp01(time / magnetMoveToCenterDuration);
-
-            transform.position = Vector3.Lerp(startPos, centerPos, t);
             transform.localScale = Vector3.Lerp(startScale, centerScale, t);
-
             yield return null;
         }
 
-        transform.position = centerPos;
         transform.localScale = centerScale;
 
         if (magnetCenterStayDuration > 0f)
@@ -203,7 +165,6 @@ public class HiddenObjectRuncit : MonoBehaviour
     public IEnumerator PlayMagnetMoveToUI()
     {
         manager.CenterTargetUI(categoryId);
-
         Canvas.ForceUpdateCanvases();
         yield return null;
 
@@ -220,29 +181,30 @@ public class HiddenObjectRuncit : MonoBehaviour
 
             Vector3 uiWorldTarget = GetCurrentUIWorldTarget();
 
+            // Straight line movement, no spinning or wandering
             transform.position = Vector3.Lerp(startPos, uiWorldTarget, t);
             transform.localScale = Vector3.Lerp(startScale, endScale, t);
+            transform.Rotate(0, 0, 15f);
 
             yield return null;
         }
 
         transform.position = GetCurrentUIWorldTarget();
         transform.localScale = endScale;
+        transform.rotation = Quaternion.identity;
+
+        // THE FIX: Trigger the tick animation and completion ONLY after it lands!
+        isFound = true;
+        manager.RegisterObject(this);
+        manager.TryMarkFound(categoryId, GetInstanceID());
+
+        WrongClickDetectorRuncit detector = FindObjectOfType<WrongClickDetectorRuncit>();
+        if (detector != null) detector.RegisterValidClick();
+
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayCorrectClick();
 
         manager.CompleteToUI(categoryId);
-
         gameObject.SetActive(false);
-    }
-
-    private Vector3 GetMagnetCenterWorldTarget(int magnetIndex, int totalTargets)
-    {
-        totalTargets = Mathf.Max(1, totalTargets);
-
-        float slotOffset = magnetIndex - (totalTargets - 1) * 0.5f;
-        float targetViewportX = centerViewportX + slotOffset * magnetCenterViewportSpacing;
-        targetViewportX = Mathf.Clamp(targetViewportX, 0.1f, 0.9f);
-
-        return GetViewportWorldPosition(targetViewportX, centerViewportY);
     }
 
     private IEnumerator HintRoutine()

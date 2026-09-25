@@ -28,6 +28,11 @@ public class HiddenObjectBengkel : MonoBehaviour
     [SerializeField] private float uiFlyStartScale = 1f;
     [SerializeField] private float uiFlyEndScale = 0.55f;
 
+    [Header("Magnet Settings")]
+    [SerializeField] private float magnetScaleDuration = 0.3f;
+    [SerializeField] private float magnetHoverDuration = 0.2f;
+    [SerializeField] private float magnetScaleMultiplier = 1.3f; 
+
     [Header("Optional SFX")]
     [SerializeField] private AudioClip clickSfx;
     [SerializeField] private bool playClickSfx = true;
@@ -39,6 +44,7 @@ public class HiddenObjectBengkel : MonoBehaviour
 
     private bool isFound = false;
     private bool isAnimating = false;
+    private bool isMagnetTarget = false; 
     private Vector3 originalScale;
     private AudioSource audioSource;
 
@@ -49,52 +55,34 @@ public class HiddenObjectBengkel : MonoBehaviour
     {
         originalScale = transform.localScale;
 
-        if (manager == null)
-            manager = FindObjectOfType<ManagerHiddenObjectBengkel>(true);
-
-        if (spriteRenderer == null)
-            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-
-        if (col2D == null)
-            col2D = GetComponent<Collider2D>();
-
-        if (col3D == null)
-            col3D = GetComponent<Collider>();
-
-        if (targetCanvas == null)
-            targetCanvas = FindObjectOfType<Canvas>();
+        if (manager == null) manager = FindObjectOfType<ManagerHiddenObjectBengkel>(true);
+        if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (col2D == null) col2D = GetComponent<Collider2D>();
+        if (col3D == null) col3D = GetComponent<Collider>();
+        if (targetCanvas == null) targetCanvas = FindObjectOfType<Canvas>();
 
         if (targetCanvas != null && flyParent == null)
             flyParent = targetCanvas.transform as RectTransform;
 
         audioSource = GetComponent<AudioSource>();
-
-        if (audioSource == null)
-            audioSource = gameObject.AddComponent<AudioSource>();
-
+        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
     }
 
     private void Start()
     {
-        if (manager == null)
-            manager = FindObjectOfType<ManagerHiddenObjectBengkel>(true);
-
-        if (manager != null)
-            manager.RegisterObject(this);
+        if (manager == null) manager = FindObjectOfType<ManagerHiddenObjectBengkel>(true);
+        if (manager != null) manager.RegisterObject(this);
     }
 
     private void OnDestroy()
     {
-        if (manager != null)
-            manager.UnregisterObject(this);
+        if (manager != null) manager.UnregisterObject(this);
     }
 
     private void OnMouseDown()
     {
-        if (isFound || isAnimating)
-            return;
-
+        if (isFound || isAnimating || isMagnetTarget) return;
         CollectByClick();
     }
 
@@ -102,11 +90,9 @@ public class HiddenObjectBengkel : MonoBehaviour
     {
         isFound = true;
         DisableCollider();
-
         PlayClickSound();
 
-        if (manager == null)
-            manager = FindObjectOfType<ManagerHiddenObjectBengkel>(true);
+        if (manager == null) manager = FindObjectOfType<ManagerHiddenObjectBengkel>(true);
 
         if (manager != null)
         {
@@ -121,8 +107,7 @@ public class HiddenObjectBengkel : MonoBehaviour
 
     private void PlayClickSound()
     {
-        if (!playClickSfx)
-            return;
+        if (!playClickSfx) return;
 
         if (clickSfx != null && audioSource != null)
         {
@@ -130,9 +115,8 @@ public class HiddenObjectBengkel : MonoBehaviour
             return;
         }
 
-        // Kalau SFXManager awak ada PlayCoinGain(), boleh guna ini sebagai bunyi sementara.
         if (SFXManager.Instance != null)
-            SFXManager.Instance.PlayCoinGain();
+            SFXManager.Instance.PlayCoinGain(); // Default SFX if assigned
     }
 
     private IEnumerator CollectWithoutManagerRoutine()
@@ -141,67 +125,50 @@ public class HiddenObjectBengkel : MonoBehaviour
         HideWorldVisual();
     }
 
+    // This is called by the Manager when the Magnet is used!
     public bool BeginMagnetSelection()
     {
-        if (isFound || isAnimating)
-            return false;
+        if (isFound || isAnimating || isMagnetTarget) return false;
 
-        isFound = true;
-        DisableCollider();
-
+        isMagnetTarget = true;
+        DisableCollider(); 
+        
         return true;
     }
 
+    // Magnet Hover - Scales up in place instead of moving to the center
     public IEnumerator PlayMagnetMoveToCenter(int index, int totalTargets)
     {
         isAnimating = true;
 
-        Camera cam = Camera.main;
-
-        if (cam == null)
-        {
-            isAnimating = false;
-            yield break;
-        }
-
-        Vector3 startPosition = transform.position;
-        Vector3 centerPosition = GetCameraCenterWorldPosition(cam);
-
-        if (totalTargets > 1)
-        {
-            float offsetIndex = index - ((totalTargets - 1) * 0.5f);
-            centerPosition += new Vector3(offsetIndex * centerSpacing, 0f, 0f);
-        }
-
-        centerPosition.z = startPosition.z;
+        Vector3 startScale = transform.localScale;
+        Vector3 targetScale = originalScale * magnetScaleMultiplier;
 
         float timer = 0f;
 
-        while (timer < moveToCenterDuration)
+        while (timer < magnetScaleDuration)
         {
             timer += Time.deltaTime;
-
-            float t = Mathf.Clamp01(timer / moveToCenterDuration);
-            t = SmoothEase(t);
-
-            transform.position = Vector3.Lerp(startPosition, centerPosition, t);
-
+            float t = Mathf.Clamp01(timer / magnetScaleDuration);
+            transform.localScale = Vector3.Lerp(startScale, targetScale, SmoothEase(t));
             yield return null;
         }
 
-        transform.position = centerPosition;
-        isAnimating = false;
+        transform.localScale = targetScale;
+
+        if (magnetHoverDuration > 0f)
+            yield return new WaitForSeconds(magnetHoverDuration);
+            
+        isAnimating = false; 
     }
 
+    // Magnet Fly - Sends the UI clone flying down
     public IEnumerator PlayMagnetMoveToUI()
     {
         isAnimating = true;
 
-        if (manager == null)
-            manager = FindObjectOfType<ManagerHiddenObjectBengkel>(true);
-
-        if (targetCanvas == null)
-            targetCanvas = FindObjectOfType<Canvas>();
+        if (manager == null) manager = FindObjectOfType<ManagerHiddenObjectBengkel>(true);
+        if (targetCanvas == null) targetCanvas = FindObjectOfType<Canvas>();
 
         if (targetCanvas != null && flyParent == null)
             flyParent = targetCanvas.transform as RectTransform;
@@ -210,27 +177,21 @@ public class HiddenObjectBengkel : MonoBehaviour
         {
             HideWorldVisual();
             isAnimating = false;
-
-            if (manager != null)
-                manager.TryMarkFound(this, false);
-
+            
+            // Mark as found natively if setup is missing
+            isFound = true;
+            manager?.TryMarkFound(this, false);
+            PlayClickSound();
             yield break;
         }
 
         Camera mainCamera = Camera.main;
         Camera uiCamera = GetUICamera(targetCanvas);
 
-        Vector3 startScreenPosition;
-
-        if (mainCamera != null)
-            startScreenPosition = mainCamera.WorldToScreenPoint(transform.position);
-        else
-            startScreenPosition = transform.position;
-
+        Vector3 startScreenPosition = mainCamera != null ? mainCamera.WorldToScreenPoint(transform.position) : transform.position;
         Vector3 targetScreenPosition = manager.GetTargetUIScreenPosition(this, uiCamera);
 
-        if (targetScreenPosition == Vector3.zero)
-            targetScreenPosition = startScreenPosition;
+        if (targetScreenPosition == Vector3.zero) targetScreenPosition = startScreenPosition;
 
         Vector2 startLocalPosition = ScreenToCanvasLocal(startScreenPosition, targetCanvas, flyParent);
         Vector2 targetLocalPosition = ScreenToCanvasLocal(targetScreenPosition, targetCanvas, flyParent);
@@ -242,23 +203,23 @@ public class HiddenObjectBengkel : MonoBehaviour
         if (flyObject == null)
         {
             isAnimating = false;
+            isFound = true;
             manager.TryMarkFound(this, false);
+            PlayClickSound();
             yield break;
         }
 
         RectTransform flyRect = flyObject.GetComponent<RectTransform>();
-
         float timer = 0f;
 
+        // Fly the UI clone directly to the slot
         while (timer < moveToUIDuration)
         {
             timer += Time.unscaledDeltaTime;
-
             float t = Mathf.Clamp01(timer / moveToUIDuration);
             float easedT = SmoothEase(t);
 
             flyRect.anchoredPosition = Vector2.Lerp(startLocalPosition, targetLocalPosition, easedT);
-
             float scale = Mathf.Lerp(uiFlyStartScale, uiFlyEndScale, easedT);
             flyRect.localScale = Vector3.one * scale;
 
@@ -266,19 +227,19 @@ public class HiddenObjectBengkel : MonoBehaviour
         }
 
         flyRect.anchoredPosition = targetLocalPosition;
-
         Destroy(flyObject);
 
-        isAnimating = false;
-
-        // Untuk kes magnet. Kalau object sudah didaftarkan oleh manager, call ini akan diabaikan.
+        // TRIGGER COMPLETION AND TICK NOW THAT FLIGHT IS FINISHED
+        isFound = true;
         manager.TryMarkFound(this, false);
+        PlayClickSound();
+
+        isAnimating = false;
     }
 
     private GameObject CreateFlyImageObject(Vector2 startLocalPosition)
     {
-        if (spriteRenderer == null || spriteRenderer.sprite == null)
-            return null;
+        if (spriteRenderer == null || spriteRenderer.sprite == null) return null;
 
         GameObject flyObject = new GameObject("Flying Item UI - " + gameObject.name);
         flyObject.transform.SetParent(flyParent, false);
@@ -301,45 +262,22 @@ public class HiddenObjectBengkel : MonoBehaviour
         return flyObject;
     }
 
-    private Vector3 GetCameraCenterWorldPosition(Camera cam)
-    {
-        float zDistance = Mathf.Abs(transform.position.z - cam.transform.position.z);
-
-        Vector3 center = cam.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, zDistance));
-        center.z = transform.position.z;
-
-        return center;
-    }
-
     private Vector2 ScreenToCanvasLocal(Vector3 screenPosition, Canvas canvas, RectTransform parentRect)
     {
         Camera uiCamera = GetUICamera(canvas);
-
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            parentRect,
-            screenPosition,
-            uiCamera,
-            out Vector2 localPosition
-        );
-
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPosition, uiCamera, out Vector2 localPosition);
         return localPosition;
     }
 
     private Camera GetUICamera(Canvas canvas)
     {
-        if (canvas == null)
-            return null;
-
-        if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-            return null;
-
+        if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay) return null;
         return canvas.worldCamera;
     }
 
     public void PlayHint()
     {
-        if (!gameObject.activeInHierarchy)
-            return;
+        if (!gameObject.activeInHierarchy || isFound || isMagnetTarget) return;
 
         StopCoroutine(nameof(HintRoutine));
         StartCoroutine(nameof(HintRoutine));
@@ -353,48 +291,36 @@ public class HiddenObjectBengkel : MonoBehaviour
         for (int i = 0; i < hintPulseCount; i++)
         {
             float timer = 0f;
-
             while (timer < hintDuration)
             {
                 timer += Time.unscaledDeltaTime;
-
                 float t = Mathf.Clamp01(timer / hintDuration);
                 transform.localScale = Vector3.Lerp(normalScale, biggerScale, t);
-
                 yield return null;
             }
 
             timer = 0f;
-
             while (timer < hintDuration)
             {
                 timer += Time.unscaledDeltaTime;
-
                 float t = Mathf.Clamp01(timer / hintDuration);
                 transform.localScale = Vector3.Lerp(biggerScale, normalScale, t);
-
                 yield return null;
             }
         }
-
         transform.localScale = normalScale;
     }
 
     private void DisableCollider()
     {
-        if (col2D != null)
-            col2D.enabled = false;
-
-        if (col3D != null)
-            col3D.enabled = false;
+        if (col2D != null) col2D.enabled = false;
+        if (col3D != null) col3D.enabled = false;
     }
 
     private void HideWorldVisual()
     {
         Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-
-        for (int i = 0; i < renderers.Length; i++)
-            renderers[i].enabled = false;
+        for (int i = 0; i < renderers.Length; i++) renderers[i].enabled = false;
     }
 
     private float SmoothEase(float t)
@@ -406,18 +332,14 @@ public class HiddenObjectBengkel : MonoBehaviour
     {
         isFound = false;
         isAnimating = false;
+        isMagnetTarget = false;
 
         transform.localScale = originalScale;
 
         Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++) renderers[i].enabled = true;
 
-        for (int i = 0; i < renderers.Length; i++)
-            renderers[i].enabled = true;
-
-        if (col2D != null)
-            col2D.enabled = true;
-
-        if (col3D != null)
-            col3D.enabled = true;
+        if (col2D != null) col2D.enabled = true;
+        if (col3D != null) col3D.enabled = true;
     }
 }

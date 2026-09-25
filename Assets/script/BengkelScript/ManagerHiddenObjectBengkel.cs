@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using DG.Tweening; // <-- REQUIRED FOR POWERUPS
 
 public class ManagerHiddenObjectBengkel : MonoBehaviour
 {
@@ -31,20 +32,8 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
     [Header("Focus Hint")]
     [SerializeField] private float focusHintMarkerDuration = 1.5f;
 
-    [Header("Zoom Hint")]
-    [SerializeField] private float zoomHintSize = 3.5f;
-    [SerializeField] private float zoomHintHoldDuration = 1.8f;
-    [SerializeField] private float zoomHintDelayBeforePulse = 0.35f;
-
-    [Header("Zoom Hint Item Highlight")]
-    [SerializeField] private float zoomHintPulseDuration = 1f;
-    [SerializeField] private float zoomHintPulseSpeed = 5f;
-    [SerializeField] private float zoomHintBiggerScale = 1.12f;
-    [SerializeField] private float zoomHintSmallerScale = 0.95f;
-    [SerializeField] private Color zoomHintColor = Color.yellow;
-
-    [Header("Magnet")]
-    [SerializeField] private int magnetPullCount = 2;
+    [Header("Magnet Hint")]
+    [SerializeField] private int magnetPullCount = 1; // Usually 1 for standard powerup
     [SerializeField] private float magnetDelayBetweenObjects = 0.08f;
 
     private readonly List<HiddenObjectBengkel> allObjects = new List<HiddenObjectBengkel>();
@@ -52,8 +41,6 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
 
     private Camera mainCamera;
     private bool levelCompleteTriggered = false;
-    private Coroutine cameraHintRoutine;
-    private Coroutine zoomPulseRoutine;
 
     private Coroutine scrollLockRoutine;
     private Vector2 savedContentAnchoredPosition;
@@ -78,45 +65,29 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
     private void OnDisable()
     {
         Canvas.willRenderCanvases -= RestoreFrozenScrollBeforeRender;
-
-        if (isScrollFrozen)
-            RestoreScrollSettings();
+        if (isScrollFrozen) RestoreScrollSettings();
     }
 
     private IEnumerator Start()
     {
         yield return null;
-
         RefreshReferences();
-
         AutoRegisterSceneObjects();
     }
 
     private void LateUpdate()
     {
-        if (isScrollFrozen)
-            RestoreScrollPosition();
+        if (isScrollFrozen) RestoreScrollPosition();
     }
 
     public void RefreshReferences()
     {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (uiManager == null)
-            uiManager = FindObjectOfType<HiddenObjectUIManagerBengkel>(true);
-
-        if (cameraController == null)
-            cameraController = FindObjectOfType<CameraDrag2DBengkel>(true);
-
-        if (hintMarkerUI == null)
-            hintMarkerUI = FindObjectOfType<HintMarkerUIBengkel>(true);
-
-        if (levelCompleteManager == null)
-            levelCompleteManager = FindObjectOfType<LevelCompleteManagerBengkel>(true);
-
-        if (wrongClickDetector == null)
-            wrongClickDetector = FindObjectOfType<WrongClickDetectorBengkel>(true);
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (uiManager == null) uiManager = FindObjectOfType<HiddenObjectUIManagerBengkel>(true);
+        if (cameraController == null) cameraController = FindObjectOfType<CameraDrag2DBengkel>(true);
+        if (hintMarkerUI == null) hintMarkerUI = FindObjectOfType<HintMarkerUIBengkel>(true);
+        if (levelCompleteManager == null) levelCompleteManager = FindObjectOfType<LevelCompleteManagerBengkel>(true);
+        if (wrongClickDetector == null) wrongClickDetector = FindObjectOfType<WrongClickDetectorBengkel>(true);
     }
 
     private void AutoRegisterSceneObjects()
@@ -131,29 +102,22 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
         for (int i = 0; i < objs.Length; i++)
         {
             HiddenObjectBengkel obj = objs[i];
-
-            if (obj == null) continue;
-            if (obj.gameObject.scene != activeScene) continue;
+            if (obj == null || obj.gameObject.scene != activeScene) continue;
 
             RegisterObject(obj);
-
-            if (obj.IsFound)
-                foundObjects.Add(obj);
+            if (obj.IsFound) foundObjects.Add(obj);
         }
     }
 
     public void RegisterObject(HiddenObjectBengkel hiddenObject)
     {
-        if (hiddenObject == null) return;
-        if (allObjects.Contains(hiddenObject)) return;
-
+        if (hiddenObject == null || allObjects.Contains(hiddenObject)) return;
         allObjects.Add(hiddenObject);
     }
 
     public void UnregisterObject(HiddenObjectBengkel hiddenObject)
     {
         if (hiddenObject == null) return;
-
         allObjects.Remove(hiddenObject);
         foundObjects.Remove(hiddenObject);
     }
@@ -161,19 +125,14 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
     public bool TryMarkFound(HiddenObjectBengkel hiddenObject)
     {
         bool accepted = MarkFoundOnly(hiddenObject);
-
-        if (accepted)
-            FinishCollectUI(hiddenObject);
-
+        if (accepted) FinishCollectUI(hiddenObject);
         return accepted;
     }
 
     public bool TryMarkFound(HiddenObjectBengkel hiddenObject, bool moveToUI)
     {
         bool accepted = MarkFoundOnly(hiddenObject);
-
-        if (!accepted)
-            return false;
+        if (!accepted) return false;
 
         if (moveToUI)
             StartCoroutine(CompleteToUIRoutine(hiddenObject));
@@ -183,46 +142,24 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
         return true;
     }
 
-    public bool TryMarkFound(string targetId)
-    {
-        HiddenObjectBengkel target = FindObjectByCategory(targetId);
-        return TryMarkFound(target, false);
-    }
-
-    public bool TryMarkFound(string targetId, bool moveToUI)
-    {
-        HiddenObjectBengkel target = FindObjectByCategory(targetId);
-        return TryMarkFound(target, moveToUI);
-    }
-
-    public bool TryMarkFound(string targetId, int instanceId)
-    {
-        HiddenObjectBengkel target = FindObjectByCategoryAndInstance(targetId, instanceId);
-        return TryMarkFound(target, false);
-    }
-
-    public bool TryMarkFound(HiddenObjectBengkel hiddenObject, int ignoredInstanceId)
-    {
-        return TryMarkFound(hiddenObject, false);
-    }
+    public bool TryMarkFound(string targetId) { return TryMarkFound(FindObjectByCategory(targetId), false); }
+    public bool TryMarkFound(string targetId, bool moveToUI) { return TryMarkFound(FindObjectByCategory(targetId), moveToUI); }
+    public bool TryMarkFound(string targetId, int instanceId) { return TryMarkFound(FindObjectByCategoryAndInstance(targetId, instanceId), false); }
+    public bool TryMarkFound(HiddenObjectBengkel hiddenObject, int ignoredInstanceId) { return TryMarkFound(hiddenObject, false); }
 
     private bool MarkFoundOnly(HiddenObjectBengkel hiddenObject)
     {
-        if (hiddenObject == null) return false;
-        if (foundObjects.Contains(hiddenObject)) return false;
+        if (hiddenObject == null || foundObjects.Contains(hiddenObject)) return false;
 
         foundObjects.Add(hiddenObject);
-
-        if (wrongClickDetector != null)
-            wrongClickDetector.RegisterValidClick();
+        if (wrongClickDetector != null) wrongClickDetector.RegisterValidClick();
 
         return true;
     }
 
     private IEnumerator CompleteToUIRoutine(HiddenObjectBengkel hiddenObject)
     {
-        if (hiddenObject == null)
-            yield break;
+        if (hiddenObject == null) yield break;
 
         yield return hiddenObject.PlayMagnetMoveToCenter(0, 1);
         yield return hiddenObject.PlayMagnetMoveToUI();
@@ -232,25 +169,19 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
 
     private void FinishCollectUI(HiddenObjectBengkel hiddenObject)
     {
-        if (hiddenObject == null)
-            return;
+        if (hiddenObject == null) return;
 
         if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
         {
             CaptureScrollPosition();
-
             uiManager.ConsumeOne(hiddenObject.CategoryId);
-
             PlayTickAnimation(hiddenObject.CategoryId);
-
             StartScrollLock();
         }
 
-        // --- THE NEW WIN LOGIC ---
         if (foundObjects.Count >= allObjects.Count)
         {
             Debug.Log("[Manager] SUCCESS: All " + allObjects.Count + " items in the scene have been found!");
-            
             if (!levelCompleteTriggered)
             {
                 levelCompleteTriggered = true;
@@ -265,48 +196,22 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
 
     private void PlayTickAnimation(string categoryId)
     {
-        if (string.IsNullOrEmpty(categoryId))
-            return;
-
-        if (tickAnimationTargets == null || tickAnimationTargets.Length == 0)
-        {
-            Debug.LogWarning("[ManagerHiddenObjectBengkel] Tick Animation Targets kosong.");
-            return;
-        }
+        if (string.IsNullOrEmpty(categoryId) || tickAnimationTargets == null || tickAnimationTargets.Length == 0) return;
 
         for (int i = 0; i < tickAnimationTargets.Length; i++)
         {
             TickAnimationTarget target = tickAnimationTargets[i];
-
-            if (target == null)
-                continue;
-
-            if (target.categoryId != categoryId)
-                continue;
-
-            if (target.tickAnimation != null)
+            if (target != null && target.categoryId == categoryId && target.tickAnimation != null)
             {
                 target.tickAnimation.Play();
-                Debug.Log("[ManagerHiddenObjectBengkel] Tick animation dimainkan untuk category: " + categoryId);
+                return;
             }
-            else
-            {
-                Debug.LogWarning("[ManagerHiddenObjectBengkel] Tick animation belum assign untuk category: " + categoryId);
-            }
-
-            return;
         }
-
-        Debug.LogWarning("[ManagerHiddenObjectBengkel] Tiada tick animation target untuk category: " + categoryId);
     }
 
     private void CaptureScrollPosition()
     {
-        if (!lockScrollWhenCollectItem)
-            return;
-
-        if (itemListScrollRect == null)
-            return;
+        if (!lockScrollWhenCollectItem || itemListScrollRect == null) return;
 
         Canvas.ForceUpdateCanvases();
 
@@ -322,7 +227,6 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
 
         itemListScrollRect.StopMovement();
         itemListScrollRect.velocity = Vector2.zero;
-
         itemListScrollRect.inertia = false;
         itemListScrollRect.horizontal = false;
         itemListScrollRect.vertical = false;
@@ -332,52 +236,36 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
 
     private void StartScrollLock()
     {
-        if (!lockScrollWhenCollectItem)
-            return;
+        if (!lockScrollWhenCollectItem || itemListScrollRect == null) return;
 
-        if (itemListScrollRect == null)
-            return;
-
-        if (scrollLockRoutine != null)
-            StopCoroutine(scrollLockRoutine);
-
+        if (scrollLockRoutine != null) StopCoroutine(scrollLockRoutine);
         scrollLockRoutine = StartCoroutine(KeepScrollStillRoutine());
     }
 
     private IEnumerator KeepScrollStillRoutine()
     {
         yield return new WaitForEndOfFrame();
-
         float timer = 0f;
-
         while (timer < scrollLockDuration)
         {
             RestoreScrollPosition();
-
             timer += Time.unscaledDeltaTime;
             yield return null;
         }
 
         RestoreScrollPosition();
         RestoreScrollSettings();
-
         scrollLockRoutine = null;
     }
 
-    private void RestoreFrozenScrollBeforeRender()
-    {
-        if (isScrollFrozen)
-            RestoreScrollPosition();
-    }
+    private void RestoreFrozenScrollBeforeRender() { if (isScrollFrozen) RestoreScrollPosition(); }
 
     private void RestoreScrollPosition()
     {
-        if (itemListScrollRect == null)
-            return;
+        if (itemListScrollRect == null) return;
 
         itemListScrollRect.StopMovement();
         itemListScrollRect.velocity = Vector2.zero;
-
         itemListScrollRect.horizontalNormalizedPosition = savedHorizontalNormalizedPosition;
         itemListScrollRect.verticalNormalizedPosition = savedVerticalNormalizedPosition;
 
@@ -392,139 +280,62 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
             itemListScrollRect.horizontal = savedScrollHorizontal;
             itemListScrollRect.vertical = savedScrollVertical;
             itemListScrollRect.inertia = savedScrollInertia;
-
             itemListScrollRect.StopMovement();
             itemListScrollRect.velocity = Vector2.zero;
         }
-
         isScrollFrozen = false;
-    }
-
-    private bool AreAllHiddenObjectsFound()
-    {
-        if (allObjects.Count == 0)
-            return false;
-
-        for (int i = 0; i < allObjects.Count; i++)
-        {
-            HiddenObjectBengkel obj = allObjects[i];
-
-            if (obj == null)
-                continue;
-
-            if (foundObjects.Contains(obj))
-                continue;
-
-            if (obj.IsFound)
-                continue;
-
-            return false;
-        }
-
-        return true;
     }
 
     public object CenterTargetUI(HiddenObjectBengkel hiddenObject)
     {
         if (hiddenObject == null) return null;
-
         RefreshReferences();
-
         if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
             StartCoroutine(uiManager.CenterObjectUISmooth(hiddenObject.CategoryId));
-
         return null;
     }
 
-    public object CenterTargetUI(string targetId)
-    {
-        HiddenObjectBengkel target = FindObjectByCategory(targetId);
-        if (target == null) return null;
-
-        return CenterTargetUI(target);
-    }
-
-    public void CompleteToUI(HiddenObjectBengkel hiddenObject)
-    {
-        if (hiddenObject == null)
-            return;
-
-        StartCoroutine(CompleteToUIRoutine(hiddenObject));
-    }
-
-    public void CompleteToUI(string targetId)
-    {
-        HiddenObjectBengkel target = FindObjectByCategory(targetId);
-
-        if (target == null)
-            return;
-
-        CompleteToUI(target);
-    }
+    public object CenterTargetUI(string targetId) { return CenterTargetUI(FindObjectByCategory(targetId)); }
+    public void CompleteToUI(HiddenObjectBengkel hiddenObject) { if (hiddenObject != null) StartCoroutine(CompleteToUIRoutine(hiddenObject)); }
+    public void CompleteToUI(string targetId) { CompleteToUI(FindObjectByCategory(targetId)); }
 
     public Vector3 GetTargetUIScreenPosition(HiddenObjectBengkel hiddenObject)
     {
-        if (hiddenObject == null)
-            return Vector3.zero;
-
+        if (hiddenObject == null) return Vector3.zero;
         RefreshReferences();
-
         if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
             return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, GetUICamera());
 
-        if (mainCamera == null)
-            return hiddenObject.transform.position;
-
+        if (mainCamera == null) return hiddenObject.transform.position;
         return mainCamera.WorldToScreenPoint(hiddenObject.transform.position);
     }
 
-    public Vector3 GetTargetUIScreenPosition(string targetId)
-    {
-        HiddenObjectBengkel target = FindObjectByCategory(targetId);
-        return GetTargetUIScreenPosition(target);
-    }
+    public Vector3 GetTargetUIScreenPosition(string targetId) { return GetTargetUIScreenPosition(FindObjectByCategory(targetId)); }
 
     public Vector3 GetTargetUIScreenPosition(string targetId, Camera uiCamera)
     {
         RefreshReferences();
-
-        if (uiManager != null && !string.IsNullOrEmpty(targetId))
-            return uiManager.GetObjectUIScreenPosition(targetId, uiCamera);
-
+        if (uiManager != null && !string.IsNullOrEmpty(targetId)) return uiManager.GetObjectUIScreenPosition(targetId, uiCamera);
         HiddenObjectBengkel target = FindObjectByCategory(targetId);
-        if (target == null)
-            return Vector3.zero;
-
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (mainCamera == null)
-            return target.transform.position;
-
+        if (target == null) return Vector3.zero;
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera == null) return target.transform.position;
         return mainCamera.WorldToScreenPoint(target.transform.position);
     }
 
     public Vector3 GetTargetUIScreenPosition(HiddenObjectBengkel hiddenObject, Camera uiCamera)
     {
-        if (hiddenObject == null)
-            return Vector3.zero;
-
-        if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
-            return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, uiCamera);
-
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (mainCamera == null)
-            return hiddenObject.transform.position;
-
+        if (hiddenObject == null) return Vector3.zero;
+        if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId)) return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, uiCamera);
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera == null) return hiddenObject.transform.position;
         return mainCamera.WorldToScreenPoint(hiddenObject.transform.position);
     }
 
+    // --- FOCUS HINT (UPDATED FOR BENGKEL) ---
     public bool UseFocusHint()
     {
         RefreshReferences();
-
         HiddenObjectBengkel target = GetFirstUnfoundObject();
 
         if (target == null)
@@ -533,18 +344,10 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
             target = GetFirstUnfoundObject();
         }
 
-        if (target == null)
-        {
-            Debug.LogWarning("UseFocusHint gagal: tiada hidden object yang belum dijumpai.");
-            return false;
-        }
-
-        Debug.Log("FocusHint target = " + target.name);
+        if (target == null) return false;
 
         if (cameraController != null)
             cameraController.FocusOnWorldPosition(target.transform.position);
-        else
-            MoveCameraInstant(target.transform.position);
 
         if (hintMarkerUI != null)
             hintMarkerUI.ShowOnTarget(target.transform, focusHintMarkerDuration);
@@ -557,178 +360,84 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
         return true;
     }
 
-    public bool UseZoomHint()
+    // --- MAGNET HINT (UPDATED FOR BENGKEL) ---
+    public bool UseMagnetHint()
     {
         RefreshReferences();
+        HiddenObjectBengkel targetItem = GetFirstUnfoundObject();
 
-        HiddenObjectBengkel target = GetFirstUnfoundObject();
-
-        if (target == null)
+        if (targetItem == null)
         {
             AutoRegisterSceneObjects();
-            target = GetFirstUnfoundObject();
+            targetItem = GetFirstUnfoundObject();
         }
 
-        if (target == null)
+        if (targetItem == null) return false;
+
+        // 1. Turn off colliders instantly
+        Collider col3D = targetItem.GetComponent<Collider>();
+        Collider2D col2D = targetItem.GetComponent<Collider2D>();
+        if (col3D != null) col3D.enabled = false;
+        if (col2D != null) col2D.enabled = false;
+
+        // 2. Check if on screen
+        Vector3 vp = mainCamera.WorldToViewportPoint(targetItem.transform.position);
+        bool isOnScreen = vp.x > 0 && vp.x < 1 && vp.y > 0 && vp.y < 1 && vp.z > 0;
+
+        Sequence magnetSequence = DOTween.Sequence();
+
+        // 3. Pan camera
+        if (!isOnScreen)
         {
-            Debug.LogWarning("UseZoomHint gagal: tiada hidden object yang belum dijumpai.");
-            return false;
-        }
-
-        Debug.Log("ZoomHint target = " + target.name);
-
-        StartCameraHintRoutine(ZoomHintRoutine(target));
-        return true;
-    }
-
-    public bool UseMagnetPower()
-    {
-        HiddenObjectBengkel[] targets = GetUnfoundObjects(magnetPullCount);
-
-        if (targets.Length == 0)
-        {
-            AutoRegisterSceneObjects();
-            targets = GetUnfoundObjects(magnetPullCount);
-        }
-
-        if (targets.Length == 0)
-        {
-            Debug.LogWarning("UseMagnetPower gagal: tiada hidden object yang belum dijumpai.");
-            return false;
-        }
-
-        StartCoroutine(MagnetRoutine(targets));
-        return true;
-    }
-
-    private IEnumerator ZoomItemPulseRoutine(HiddenObjectBengkel target)
-    {
-        if (target == null)
-            yield break;
-
-        Transform targetTransform = target.transform;
-        SpriteRenderer spriteRenderer = target.GetComponent<SpriteRenderer>();
-
-        Vector3 originalScale = targetTransform.localScale;
-        Vector3 biggerScale = originalScale * zoomHintBiggerScale;
-        Vector3 smallerScale = originalScale * zoomHintSmallerScale;
-
-        Color originalColor = Color.white;
-
-        if (spriteRenderer != null)
-        {
-            originalColor = spriteRenderer.color;
-            spriteRenderer.color = zoomHintColor;
-        }
-
-        float timer = 0f;
-
-        while (timer < zoomHintPulseDuration)
-        {
-            if (target == null)
-                yield break;
-
-            timer += Time.unscaledDeltaTime;
-
-            float pulse = Mathf.PingPong(timer * zoomHintPulseSpeed, 1f);
-            targetTransform.localScale = Vector3.Lerp(smallerScale, biggerScale, pulse);
-
-            yield return null;
-        }
-
-        targetTransform.localScale = originalScale;
-
-        if (spriteRenderer != null)
-            spriteRenderer.color = originalColor;
-
-        zoomPulseRoutine = null;
-    }
-
-    private void StartCameraHintRoutine(IEnumerator routine)
-    {
-        if (cameraHintRoutine != null)
-            StopCoroutine(cameraHintRoutine);
-
-        cameraHintRoutine = StartCoroutine(routine);
-    }
-
-    private IEnumerator ZoomHintRoutine(HiddenObjectBengkel target)
-    {
-        if (target == null) yield break;
-
-        RefreshReferences();
-
-        if (cameraController != null)
-        {
-            cameraController.FocusOnWorldPosition(target.transform.position);
-            cameraController.SetZoomTarget(zoomHintSize);
-        }
-        else
-        {
-            MoveCameraInstant(target.transform.position);
-            SetCameraZoomInstant(zoomHintSize);
-        }
-
-        if (zoomHintDelayBeforePulse > 0f)
-            yield return new WaitForSecondsRealtime(zoomHintDelayBeforePulse);
-
-        if (zoomPulseRoutine != null)
-            StopCoroutine(zoomPulseRoutine);
-
-        zoomPulseRoutine = StartCoroutine(ZoomItemPulseRoutine(target));
-
-        if (zoomHintHoldDuration > 0f)
-            yield return new WaitForSecondsRealtime(zoomHintHoldDuration);
-
-        if (cameraController != null)
-            cameraController.ResetZoom();
-
-        cameraHintRoutine = null;
-    }
-
-    private void MoveCameraInstant(Vector3 targetPosition)
-    {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (mainCamera == null)
-            return;
-
-        Vector3 camPos = mainCamera.transform.position;
-        mainCamera.transform.position = new Vector3(targetPosition.x, targetPosition.y, camPos.z);
-    }
-
-    private void SetCameraZoomInstant(float size)
-    {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (mainCamera == null)
-            return;
-
-        if (mainCamera.orthographic)
-            mainCamera.orthographicSize = size;
-        else
-            mainCamera.fieldOfView = size;
-    }
-
-    private IEnumerator MagnetRoutine(HiddenObjectBengkel[] targets)
-    {
-        int totalTargets = targets.Length;
-
-        for (int i = 0; i < targets.Length; i++)
-        {
-            HiddenObjectBengkel target = targets[i];
-            if (target == null) continue;
-
-            if (target.BeginMagnetSelection())
+            if (cameraController != null)
             {
-                yield return target.PlayMagnetMoveToCenter(i, totalTargets);
-                yield return target.PlayMagnetMoveToUI();
+                cameraController.FocusOnWorldPosition(targetItem.transform.position);
+                magnetSequence.AppendInterval(0.6f); 
             }
-
-            yield return new WaitForSeconds(magnetDelayBetweenObjects);
+            else
+            {
+                Vector3 camTarget = new Vector3(targetItem.transform.position.x, targetItem.transform.position.y, mainCamera.transform.position.z);
+                magnetSequence.Append(mainCamera.transform.DOMove(camTarget, 0.8f).SetEase(Ease.OutCubic));
+            }
         }
+
+        // 4. Find UI Slot
+        bool hasUIPos = false;
+        Vector3 targetWorldPos = Vector3.zero;
+
+        if (uiManager != null && !string.IsNullOrEmpty(targetItem.CategoryId))
+        {
+            StartCoroutine(uiManager.CenterObjectUISmooth(targetItem.CategoryId));
+            magnetSequence.AppendInterval(0.25f); 
+            
+            Vector2 screenPos = uiManager.GetObjectUIScreenPosition(targetItem.CategoryId, GetUICamera());
+            if (screenPos != Vector2.zero)
+            {
+                targetWorldPos = mainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10f));
+                targetWorldPos.z = targetItem.transform.position.z;
+                hasUIPos = true;
+            }
+        }
+
+        // 5. Fly animation
+        if (hasUIPos)
+        {
+            magnetSequence.Append(targetItem.transform.DOMove(targetWorldPos, 1.2f).SetEase(Ease.InBack));
+            magnetSequence.Join(targetItem.transform.DORotate(new Vector3(0, 0, 360), 1.2f, RotateMode.FastBeyond360));
+        }
+        else
+        {
+            magnetSequence.Append(targetItem.transform.DOScale(0f, 0.5f));
+        }
+
+        // 6. Complete
+        magnetSequence.OnComplete(() =>
+        {
+            targetItem.BeginMagnetSelection(); 
+            targetItem.gameObject.SetActive(false); 
+        });
+
+        return true;
     }
 
     private HiddenObjectBengkel GetFirstUnfoundObject()
@@ -736,105 +445,38 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
         for (int i = 0; i < allObjects.Count; i++)
         {
             HiddenObjectBengkel obj = allObjects[i];
-
-            if (obj == null) continue;
-            if (foundObjects.Contains(obj)) continue;
-            if (!obj.gameObject.activeInHierarchy) continue;
-            if (obj.IsFound) continue;
-
+            if (obj == null || foundObjects.Contains(obj) || !obj.gameObject.activeInHierarchy || obj.IsFound) continue;
             return obj;
         }
-
         return null;
-    }
-
-    private HiddenObjectBengkel[] GetUnfoundObjects(int count)
-    {
-        List<HiddenObjectBengkel> result = new List<HiddenObjectBengkel>();
-
-        for (int i = 0; i < allObjects.Count; i++)
-        {
-            HiddenObjectBengkel obj = allObjects[i];
-
-            if (obj == null) continue;
-            if (foundObjects.Contains(obj)) continue;
-            if (!obj.gameObject.activeInHierarchy) continue;
-            if (obj.IsFound) continue;
-
-            result.Add(obj);
-
-            if (result.Count >= count)
-                break;
-        }
-
-        return result.ToArray();
     }
 
     private HiddenObjectBengkel FindObjectByCategory(string categoryId)
     {
-        if (string.IsNullOrEmpty(categoryId))
-            return null;
-
+        if (string.IsNullOrEmpty(categoryId)) return null;
         for (int i = 0; i < allObjects.Count; i++)
-        {
-            HiddenObjectBengkel obj = allObjects[i];
-
-            if (obj == null) continue;
-
-            if (obj.CategoryId == categoryId)
-                return obj;
-        }
-
+            if (allObjects[i] != null && allObjects[i].CategoryId == categoryId) return allObjects[i];
         return null;
     }
 
     private HiddenObjectBengkel FindObjectByCategoryAndInstance(string categoryId, int instanceId)
     {
-        if (string.IsNullOrEmpty(categoryId))
-            return null;
-
+        if (string.IsNullOrEmpty(categoryId)) return null;
         for (int i = 0; i < allObjects.Count; i++)
-        {
-            HiddenObjectBengkel obj = allObjects[i];
-
-            if (obj == null) continue;
-            if (obj.CategoryId != categoryId) continue;
-
-            if (obj.GetInstanceID() == instanceId)
-                return obj;
-        }
-
-        for (int i = 0; i < allObjects.Count; i++)
-        {
-            HiddenObjectBengkel obj = allObjects[i];
-
-            if (obj == null) continue;
-
-            if (obj.CategoryId == categoryId)
-                return obj;
-        }
-
-        return null;
+            if (allObjects[i] != null && allObjects[i].CategoryId == categoryId && allObjects[i].GetInstanceID() == instanceId) return allObjects[i];
+        return FindObjectByCategory(categoryId);
     }
 
     private Camera GetUICamera()
     {
-        if (uiManager == null)
-            return null;
-
+        if (uiManager == null) return null;
         Canvas canvas = uiManager.GetComponentInParent<Canvas>();
-        if (canvas == null)
-            return null;
-
-        if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-            return null;
-
+        if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay) return null;
         return canvas.worldCamera;
     }
 
     private void TriggerLevelComplete()
     {
-        if (levelCompleteManager != null)
-            levelCompleteManager.ShowLevelComplete();
+        if (levelCompleteManager != null) levelCompleteManager.ShowLevelComplete();
     }
 }
