@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using DG.Tweening; // <-- REQUIRED FOR POWERUPS
+using DG.Tweening; 
 
 public class ManagerHiddenObjectBengkel : MonoBehaviour
 {
@@ -20,6 +20,7 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
     [SerializeField] private HintMarkerUIBengkel hintMarkerUI;
     [SerializeField] private LevelCompleteManagerBengkel levelCompleteManager;
     [SerializeField] private WrongClickDetectorBengkel wrongClickDetector;
+    [SerializeField] private HiddenObjectCollapsibleUI collapsibleUI;
 
     [Header("Tick UI Animation")]
     [SerializeField] private TickAnimationTarget[] tickAnimationTargets;
@@ -177,6 +178,8 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
             uiManager.ConsumeOne(hiddenObject.CategoryId);
             PlayTickAnimation(hiddenObject.CategoryId);
             StartScrollLock();
+
+            if (collapsibleUI != null) collapsibleUI.RegisterFoundItem(hiddenObject.CategoryId);
         }
 
         if (foundObjects.Count >= allObjects.Count)

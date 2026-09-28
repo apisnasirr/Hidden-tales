@@ -19,6 +19,7 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
     [SerializeField] private HintMarkerUI hintMarkerUI;
     [SerializeField] private LevelCompleteManager levelCompleteManager;
     [SerializeField] private WrongClickDetectorBandar wrongClickDetector;
+    [SerializeField] private HiddenObjectCollapsibleUI collapsibleUI;
 
     [Header("Tick UI Animation")]
     [SerializeField] private TickAnimationTarget[] tickAnimationTargets;
@@ -129,6 +130,8 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
         {
             uiManager.ConsumeOne(hiddenObject.CategoryId);
             PlayTickAnimation(hiddenObject.CategoryId);
+
+            if (collapsibleUI != null) collapsibleUI.RegisterFoundItem(hiddenObject.CategoryId);
         }
 
         if (foundObjects.Count >= allObjects.Count)
