@@ -332,7 +332,6 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
     {
         int totalTargets = targets.Length;
 
-        // Wait a tiny bit for the camera to pan before the item flies
         yield return new WaitForSeconds(0.4f); 
 
         for (int i = 0; i < targets.Length; i++)
@@ -343,7 +342,6 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
             if (target.BeginMagnetSelection())
             {
-                // Uses the animation logic built into your item script!
                 yield return target.PlayMagnetMoveToCenter(i, totalTargets);
                 yield return target.PlayMagnetMoveToUI();
             }

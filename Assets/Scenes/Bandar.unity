@@ -153,26 +153,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   totalTargetObjects: 10
   maxLives: 3
-  cameraController: {fileID: 519420033}
-  hintMarkerUI: {fileID: 458601689}
-  focusHintMarkerDuration: 1.5
-  allHiddenObjects:
-  - {fileID: 1169003785}
-  - {fileID: 727949386}
-  - {fileID: 1356146148}
-  - {fileID: 950674769}
-  - {fileID: 1086909673}
-  - {fileID: 1535901343}
-  - {fileID: 1964192372}
-  - {fileID: 1730731705}
-  - {fileID: 382422815}
-  - {fileID: 1276525091}
-  bottomInventoryUI: {fileID: 0}
-  collectedText: {fileID: 0}
-  livesText: {fileID: 0}
   levelCompleteManager: {fileID: 0}
   gameOverManager: {fileID: 0}
-  sfxAudioSource: {fileID: 0}
+  sfxAudioSource: {fileID: 2076848744}
   victorySfx: {fileID: 8300000, guid: e68f42a08ec15f54c991e7cbc15595fc, type: 3}
   defeatSfx: {fileID: 8300000, guid: 24102b798787db044bd28afa7bf50720, type: 3}
   correctSfx: {fileID: 8300000, guid: 81e495f9db0e20f4e823c5cfcd224238, type: 3}
@@ -1470,7 +1453,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81f642c61c336de4a9d7b0edb0cd3faf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  manager: {fileID: 331903}
+  manager: {fileID: 686325889}
   timerManager: {fileID: 245242094}
   focusHintItemId: focus_hint
   magnetHintItemId: magnet_hint
@@ -1478,9 +1461,9 @@ MonoBehaviour:
   focusHintCountText: {fileID: 1145079605}
   focusHintButton: {fileID: 2071876169}
   focusHintIcon: {fileID: 0}
-  magnetHintCountText: {fileID: 720843218}
-  magnetHintButton: {fileID: 851221538}
-  magnetHintIcon: {fileID: 0}
+  magnetCountText: {fileID: 720843218}
+  magnetButton: {fileID: 851221538}
+  magnetIcon: {fileID: 0}
   freezeTimeCountText: {fileID: 931227411}
   freezeTimeButton: {fileID: 1655403293}
   freezeTimeIcon: {fileID: 0}
@@ -2597,7 +2580,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 4
-  m_Spacing: 5
+  m_Spacing: 6
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
@@ -11989,8 +11972,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 153340329}
-        m_TargetAssemblyTypeName: PowerUpLimitUIBandar, Assembly-CSharp
-        m_MethodName: OnClickMagnetHint
+        m_TargetAssemblyTypeName: PowerUpLimitBandar, Assembly-CSharp
+        m_MethodName: OnClickMagnet
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -15214,7 +15197,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -34, y: 0}
   m_SizeDelta: {x: 1248, y: 1662}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!225 &1050781190

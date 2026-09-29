@@ -402,11 +402,9 @@ public class ManagerHiddenObjectRuncit : MonoBehaviour
         return mainCamera.WorldToScreenPoint(hiddenObject.transform.position);
     }
 
-    // --- FOCUS HINT (UPDATED FOR RUNCIT) ---
     public bool UseFocusHint()
     {
         RefreshReferences();
-
         HiddenObjectRuncit target = GetFirstUnfoundObject();
 
         if (target == null)
@@ -415,11 +413,7 @@ public class ManagerHiddenObjectRuncit : MonoBehaviour
             target = GetFirstUnfoundObject();
         }
 
-        if (target == null)
-        {
-            Debug.LogWarning("UseFocusHint gagal: tiada hidden object yang belum dijumpai.");
-            return false;
-        }
+        if (target == null) return false;
 
         if (cameraController != null)
             cameraController.FocusOnWorldPosition(target.transform.position);
@@ -435,79 +429,46 @@ public class ManagerHiddenObjectRuncit : MonoBehaviour
         return true;
     }
 
-    // --- MAGNET HINT (UPDATED FOR RUNCIT) ---
     public bool UseMagnetHint()
     {
         RefreshReferences();
-        HiddenObjectRuncit targetItem = GetFirstUnfoundObject();
+        HiddenObjectRuncit[] targets = GetUnfoundObjects(magnetPullCount);
 
-        if (targetItem == null)
+        if (targets == null || targets.Length == 0)
         {
             AutoRegisterSceneObjects();
-            targetItem = GetFirstUnfoundObject();
+            targets = GetUnfoundObjects(magnetPullCount);
         }
 
-        if (targetItem == null) return false;
+        if (targets == null || targets.Length == 0) return false;
 
-        // Turn off colliders instantly
-        Collider col3D = targetItem.GetComponent<Collider>();
-        Collider2D col2D = targetItem.GetComponent<Collider2D>();
-        if (col3D != null) col3D.enabled = false;
-        if (col2D != null) col2D.enabled = false;
-
-        Vector3 vp = mainCamera.WorldToViewportPoint(targetItem.transform.position);
-        bool isOnScreen = vp.x > 0 && vp.x < 1 && vp.y > 0 && vp.y < 1 && vp.z > 0;
-
-        Sequence magnetSequence = DOTween.Sequence();
-
-        if (!isOnScreen)
+        if (cameraController != null && targets[0] != null)
         {
-            if (cameraController != null)
-            {
-                cameraController.FocusOnWorldPosition(targetItem.transform.position);
-                magnetSequence.AppendInterval(0.6f); 
-            }
-            else
-            {
-                Vector3 camTarget = new Vector3(targetItem.transform.position.x, targetItem.transform.position.y, mainCamera.transform.position.z);
-                magnetSequence.Append(mainCamera.transform.DOMove(camTarget, 0.8f).SetEase(Ease.OutCubic));
-            }
+            cameraController.FocusOnWorldPosition(targets[0].transform.position);
         }
 
-        bool hasUIPos = false;
-        Vector3 targetWorldPos = Vector3.zero;
-
-        if (uiManager != null && !string.IsNullOrEmpty(targetItem.CategoryId))
-        {
-            StartCoroutine(uiManager.CenterObjectUISmooth(targetItem.CategoryId));
-            magnetSequence.AppendInterval(0.25f); 
-            
-            Vector2 screenPos = uiManager.GetObjectUIScreenPosition(targetItem.CategoryId, GetUICamera());
-            if (screenPos != Vector2.zero)
-            {
-                targetWorldPos = mainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 10f));
-                targetWorldPos.z = targetItem.transform.position.z;
-                hasUIPos = true;
-            }
-        }
-
-        if (hasUIPos)
-        {
-            magnetSequence.Append(targetItem.transform.DOMove(targetWorldPos, 1.2f).SetEase(Ease.InBack));
-            magnetSequence.Join(targetItem.transform.DORotate(new Vector3(0, 0, 360), 1.2f, RotateMode.FastBeyond360));
-        }
-        else
-        {
-            magnetSequence.Append(targetItem.transform.DOScale(0f, 0.5f));
-        }
-
-        magnetSequence.OnComplete(() =>
-        {
-            targetItem.BeginMagnetSelection(); 
-            targetItem.gameObject.SetActive(false); 
-        });
-
+        StartCoroutine(MagnetRoutine(targets));
         return true;
+    }
+
+    private IEnumerator MagnetRoutine(HiddenObjectRuncit[] targets)
+    {
+        int totalTargets = targets.Length;
+        yield return new WaitForSeconds(0.4f); 
+
+        for (int i = 0; i < targets.Length; i++)
+        {
+            HiddenObjectRuncit target = targets[i];
+            if (target == null) continue;
+
+            if (target.BeginMagnetSelection())
+            {
+                yield return target.PlayMagnetMoveToCenter(i, totalTargets);
+                yield return target.PlayMagnetMoveToUI();
+            }
+
+            yield return new WaitForSeconds(magnetDelayBetweenObjects);
+        }
     }
 
     private HiddenObjectRuncit GetFirstUnfoundObject()

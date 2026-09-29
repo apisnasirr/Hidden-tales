@@ -2,11 +2,11 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PowerUpLimitUIBandar : MonoBehaviour
+public class PowerUpLimitBandar : MonoBehaviour
 {
     [Header("Managers")]
-    [SerializeField] private HiddenObjectGameManager manager; 
-    [SerializeField] private GameTimerManager timerManager;
+    [SerializeField] private ManagerHiddenObjectBandar manager;
+    [SerializeField] private GameTimerManager timerManager; // Handles the Freeze Time
 
     [Header("Shop Item IDs")]
     [SerializeField] private string focusHintItemId = "focus_hint";
@@ -18,10 +18,10 @@ public class PowerUpLimitUIBandar : MonoBehaviour
     [SerializeField] private Button focusHintButton;
     [SerializeField] private Image focusHintIcon;
 
-    [Header("Magnet Hint UI")]
-    [SerializeField] private TMP_Text magnetHintCountText;
-    [SerializeField] private Button magnetHintButton;
-    [SerializeField] private Image magnetHintIcon;
+    [Header("Magnet UI")]
+    [SerializeField] private TMP_Text magnetCountText;
+    [SerializeField] private Button magnetButton;
+    [SerializeField] private Image magnetIcon;
 
     [Header("Freeze Time UI")]
     [SerializeField] private TMP_Text freezeTimeCountText;
@@ -62,7 +62,7 @@ public class PowerUpLimitUIBandar : MonoBehaviour
         int freezeCount = CurrencyManager.Instance.GetItemAmount(freezeTimeItemId);
 
         RefreshOne(focusCount, focusHintCountText, focusHintButton, focusHintIcon);
-        RefreshOne(magnetCount, magnetHintCountText, magnetHintButton, magnetHintIcon);
+        RefreshOne(magnetCount, magnetCountText, magnetButton, magnetIcon);
         RefreshOne(freezeCount, freezeTimeCountText, freezeTimeButton, freezeTimeIcon);
     }
 
@@ -80,7 +80,7 @@ public class PowerUpLimitUIBandar : MonoBehaviour
         RefreshUI();
     }
 
-    public void OnClickMagnetHint()
+    public void OnClickMagnet()
     {
         if (CurrencyManager.Instance == null || manager == null) return;
 

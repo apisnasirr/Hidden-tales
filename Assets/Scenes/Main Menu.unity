@@ -8611,7 +8611,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sfxSlider: {fileID: 602969693}
-  bgmSlider: {fileID: 0}
+  bgmSlider: {fileID: 230238807}
 --- !u!114 &1636664878
 MonoBehaviour:
   m_ObjectHideFlags: 0
