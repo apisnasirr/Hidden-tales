@@ -13,7 +13,8 @@ public class MainMenuIntro : MonoBehaviour
     [SerializeField] private GameObject _mainMenuPanel;
 
     [Header("Loading UI Elements")]
-    [SerializeField] private Slider _loadingSlider;
+    [Tooltip("Drag your new LoadingFill image here")]
+    [SerializeField] private Image _loadingFillImage; 
     [SerializeField] private TMP_Text _percentText;
 
     [Header("Settings")]
@@ -29,7 +30,7 @@ public class MainMenuIntro : MonoBehaviour
         if (_loadingPanel != null) _loadingPanel.SetActive(true);
         if (_mainMenuPanel != null) _mainMenuPanel.SetActive(false);
         
-        if (_loadingSlider != null) _loadingSlider.value = 0f;
+        if (_loadingFillImage != null) _loadingFillImage.fillAmount = 0f;
         if (_percentText != null) _percentText.text = "0%";
 
         float timer = 0f;
@@ -39,18 +40,17 @@ public class MainMenuIntro : MonoBehaviour
             timer += Time.deltaTime;
             float progress = Mathf.Clamp01(timer / _introDuration);
             
-            if (_loadingSlider != null) _loadingSlider.value = progress;
+            if (_loadingFillImage != null) _loadingFillImage.fillAmount = progress;
             if (_percentText != null) _percentText.text = Mathf.RoundToInt(progress * 100f) + "%";
 
             yield return null;
         }
 
-        if (_loadingSlider != null) _loadingSlider.value = 1f;
+        if (_loadingFillImage != null) _loadingFillImage.fillAmount = 1f;
         if (_percentText != null) _percentText.text = "100%";
         
         yield return new WaitForSeconds(0.5f); 
 
-        // 4. Turn OFF the loading screen, turn ON the buttons!
         if (_loadingPanel != null) _loadingPanel.SetActive(false);
         if (_mainMenuPanel != null) _mainMenuPanel.SetActive(true);
     }
