@@ -10,7 +10,8 @@ public class LoadingScreenManager : MonoBehaviour
 
     [Header("Loading UI (Main Wrapper)")]
     [SerializeField] private GameObject loadingPanel;
-    [SerializeField] private Slider loadingSlider;
+    // CHANGED: Slider to Image
+    [SerializeField] private Image loadingFillImage; 
     [SerializeField] private TMP_Text percentText;
 
     [Header("Level Info Panels")]
@@ -119,8 +120,8 @@ public class LoadingScreenManager : MonoBehaviour
     {
         progress = Mathf.Clamp01(progress);
 
-        if (loadingSlider != null)
-            loadingSlider.value = progress;
+        if (loadingFillImage != null)
+            loadingFillImage.fillAmount = progress;
 
         if (percentText != null)
             percentText.text = Mathf.RoundToInt(progress * 100f) + "%";
