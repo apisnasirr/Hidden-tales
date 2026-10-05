@@ -6,7 +6,7 @@ public class PowerUpLimitBandar : MonoBehaviour
 {
     [Header("Managers")]
     [SerializeField] private ManagerHiddenObjectBandar manager;
-    [SerializeField] private GameTimerManager timerManager; // Handles the Freeze Time
+    [SerializeField] private GameTimerManager timerManager; 
 
     [Header("Shop Item IDs")]
     [SerializeField] private string focusHintItemId = "focus_hint";
@@ -87,9 +87,11 @@ public class PowerUpLimitBandar : MonoBehaviour
         int currentAmount = CurrencyManager.Instance.GetItemAmount(magnetHintItemId);
         if (currentAmount <= 0) return;
 
-        bool success = manager.UseMagnetHint(); 
-        if (!success) return;
+        manager.StartMagnetTargeting(this); 
+    }
 
+    public void DeductMagnetCurrency()
+    {
         CurrencyManager.Instance.UseItem(magnetHintItemId, 1);
         RefreshUI();
     }

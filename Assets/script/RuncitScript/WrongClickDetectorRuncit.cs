@@ -21,6 +21,8 @@ public class WrongClickDetectorRuncit : MonoBehaviour
     [Header("Event Bila Salah Klik")]
     [SerializeField] private UnityEvent onWrongClick;
 
+    [HideInInspector] public bool IsPaused = false; 
+
     private bool validClickRegisteredThisFrame = false;
     private Coroutine checkClickCoroutine;
 
@@ -32,6 +34,9 @@ public class WrongClickDetectorRuncit : MonoBehaviour
 
     private void Update()
     {
+        // ADDED: Stop processing entirely if we are targeting the magnet ring
+        if (IsPaused) return;
+
         if (!enableWrongClickDetection)
             return;
 
@@ -84,7 +89,6 @@ public class WrongClickDetectorRuncit : MonoBehaviour
     {
         validClickRegisteredThisFrame = false;
 
-        // Tunggu sampai hujung frame supaya script HiddenObject sempat panggil RegisterValidClick()
         yield return new WaitForEndOfFrame();
 
         if (validClickRegisteredThisFrame)

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 using DG.Tweening;
 
 public class ManagerHiddenObjectBandar : MonoBehaviour
@@ -27,17 +28,27 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
     [Header("Focus Hint")]
     [SerializeField] private float focusHintMarkerDuration = 1.5f;
 
-    [Header("Magnet")]
-    [SerializeField] private int magnetPullCount = 2; // Can be set to 1 in inspector if you only want it to pull one item
+    [Header("Magnet: Risk/Reward Settings")]
+    [SerializeField] private int magnetPullMaxCount = 3; 
     [SerializeField] private float magnetDelayBetweenObjects = 0.08f;
+    [Tooltip("The logical distance. Make sure your ring image roughly matches this size visually!")]
+    [SerializeField] private float magnetRadius = 3f; 
+    
+    [Header("Magnet: UI References")]
+    [SerializeField] private GameObject popup1Instruction;
+    [SerializeField] private GameObject popup2Confirm;
+    [SerializeField] private GameObject ringPreviewGraphic; 
 
     private readonly List<HiddenObjectBandar> allObjects = new List<HiddenObjectBandar>();
     private readonly HashSet<HiddenObjectBandar> foundObjects = new HashSet<HiddenObjectBandar>();
 
     private Camera mainCamera;
     private bool levelCompleteTriggered = false;
-    private Coroutine cameraHintRoutine;
-    private Coroutine zoomPulseRoutine;
+
+    private bool isTargetingMode = false;
+    private bool isConfirmingLocation = false;
+    private Vector3 selectedWorldTargetPos;
+    private PowerUpLimitBandar currentPowerUpUI;
 
     private void Awake()
     {
@@ -50,31 +61,47 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
         RefreshReferences();
 
-        if (uiManager != null)
-            uiManager.RebuildLookup();
+        if (uiManager != null) uiManager.RebuildLookup();
 
         AutoRegisterSceneObjects();
+
+        if (popup1Instruction != null) popup1Instruction.SetActive(false);
+        if (popup2Confirm != null) popup2Confirm.SetActive(false);
+        if (ringPreviewGraphic != null) ringPreviewGraphic.SetActive(false);
+    }
+
+    private void Update()
+    {
+        if (isTargetingMode && !isConfirmingLocation)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+
+                Vector3 mousePos = Input.mousePosition;
+                selectedWorldTargetPos = mainCamera.ScreenToWorldPoint(mousePos);
+                selectedWorldTargetPos.z = 0; 
+
+                if (ringPreviewGraphic != null)
+                {
+                    ringPreviewGraphic.transform.position = selectedWorldTargetPos;
+                    ringPreviewGraphic.SetActive(true);
+                }
+
+                isConfirmingLocation = true;
+                if (popup2Confirm != null) popup2Confirm.SetActive(true);
+            }
+        }
     }
 
     public void RefreshReferences()
     {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
-        if (uiManager == null)
-            uiManager = FindObjectOfType<HiddenObjectUIManager>(true);
-
-        if (cameraController == null)
-            cameraController = FindObjectOfType<CameraDrag2D>(true);
-
-        if (hintMarkerUI == null)
-            hintMarkerUI = FindObjectOfType<HintMarkerUI>(true);
-
-        if (levelCompleteManager == null)
-            levelCompleteManager = FindObjectOfType<LevelCompleteManager>(true);
-
-        if (wrongClickDetector == null)
-            wrongClickDetector = FindObjectOfType<WrongClickDetectorBandar>(true);
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (uiManager == null) uiManager = FindObjectOfType<HiddenObjectUIManager>(true);
+        if (cameraController == null) cameraController = FindObjectOfType<CameraDrag2D>(true);
+        if (hintMarkerUI == null) hintMarkerUI = FindObjectOfType<HintMarkerUI>(true);
+        if (levelCompleteManager == null) levelCompleteManager = FindObjectOfType<LevelCompleteManager>(true);
+        if (wrongClickDetector == null) wrongClickDetector = FindObjectOfType<WrongClickDetectorBandar>(true);
     }
 
     private void AutoRegisterSceneObjects()
@@ -95,8 +122,7 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
             RegisterObject(obj);
 
-            if (obj.IsFound)
-                foundObjects.Add(obj);
+            if (obj.IsFound) foundObjects.Add(obj);
         }
     }
 
@@ -104,14 +130,12 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
     {
         if (hiddenObject == null) return;
         if (allObjects.Contains(hiddenObject)) return;
-
         allObjects.Add(hiddenObject);
     }
 
     public void UnregisterObject(HiddenObjectBandar hiddenObject)
     {
         if (hiddenObject == null) return;
-
         allObjects.Remove(hiddenObject);
         foundObjects.Remove(hiddenObject);
     }
@@ -123,83 +147,48 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
         foundObjects.Add(hiddenObject);
 
-        if (wrongClickDetector != null)
-            wrongClickDetector.RegisterValidClick();
+        if (wrongClickDetector != null) wrongClickDetector.RegisterValidClick();
 
         if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
         {
             uiManager.ConsumeOne(hiddenObject.CategoryId);
             PlayTickAnimation(hiddenObject.CategoryId);
-
             if (collapsibleUI != null) collapsibleUI.RegisterFoundItem(hiddenObject.CategoryId);
         }
 
         if (foundObjects.Count >= allObjects.Count)
         {
-            Debug.Log("[ManagerBandar] SUCCESS: All " + allObjects.Count + " items in the scene have been found!");
-            
             if (!levelCompleteTriggered)
             {
                 levelCompleteTriggered = true;
                 TriggerLevelComplete();
             }
         }
-        else
-        {
-            Debug.Log("[ManagerBandar] Item found! Total found: " + foundObjects.Count + " / " + allObjects.Count);
-        }
-
         return true;
     }
 
     public bool TryMarkFound(HiddenObjectBandar hiddenObject, bool moveToUI)
     {
         bool accepted = TryMarkFound(hiddenObject);
-
-        if (accepted && moveToUI)
-            CompleteToUI(hiddenObject);
-
+        if (accepted && moveToUI) CompleteToUI(hiddenObject);
         return accepted;
     }
 
-    public bool TryMarkFound(string targetId)
-    {
-        HiddenObjectBandar target = FindObjectByCategory(targetId);
-        return TryMarkFound(target);
-    }
-
-    public bool TryMarkFound(string targetId, bool moveToUI)
-    {
-        HiddenObjectBandar target = FindObjectByCategory(targetId);
-        return TryMarkFound(target, moveToUI);
-    }
-
-    public bool TryMarkFound(string targetId, int instanceId)
-    {
-        HiddenObjectBandar target = FindObjectByCategoryAndInstance(targetId, instanceId);
-        return TryMarkFound(target);
-    }
-
-    public bool TryMarkFound(HiddenObjectBandar hiddenObject, int ignoredInstanceId)
-    {
-        return TryMarkFound(hiddenObject);
-    }
+    public bool TryMarkFound(string targetId) { return TryMarkFound(FindObjectByCategory(targetId)); }
+    public bool TryMarkFound(string targetId, bool moveToUI) { return TryMarkFound(FindObjectByCategory(targetId), moveToUI); }
+    public bool TryMarkFound(string targetId, int instanceId) { return TryMarkFound(FindObjectByCategoryAndInstance(targetId, instanceId)); }
+    public bool TryMarkFound(HiddenObjectBandar hiddenObject, int ignoredInstanceId) { return TryMarkFound(hiddenObject); }
 
     private void PlayTickAnimation(string categoryId)
     {
         if (string.IsNullOrEmpty(categoryId)) return;
-
         if (tickAnimationTargets == null || tickAnimationTargets.Length == 0) return;
 
         for (int i = 0; i < tickAnimationTargets.Length; i++)
         {
             TickAnimationTarget target = tickAnimationTargets[i];
-
             if (target == null || target.categoryId != categoryId) continue;
-
-            if (target.tickAnimation != null)
-                target.tickAnimation.Play();
-
+            if (target.tickAnimation != null) target.tickAnimation.Play();
             return;
         }
     }
@@ -208,10 +197,7 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
     {
         if (hiddenObject == null) return null;
         RefreshReferences();
-
-        if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
-            StartCoroutine(uiManager.CenterObjectUISmooth(hiddenObject.CategoryId));
-
+        if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId)) StartCoroutine(uiManager.CenterObjectUISmooth(hiddenObject.CategoryId));
         return null;
     }
 
@@ -223,57 +209,39 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
     }
 
     public void CompleteToUI(HiddenObjectBandar hiddenObject) { }
-
     public void CompleteToUI(string targetId) { }
 
     public Vector3 GetTargetUIScreenPosition(HiddenObjectBandar hiddenObject)
     {
         if (hiddenObject == null) return Vector3.zero;
         RefreshReferences();
-
-        if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
-            return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, GetUICamera());
-
+        if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId)) return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, GetUICamera());
         if (mainCamera == null) return hiddenObject.transform.position;
         return mainCamera.WorldToScreenPoint(hiddenObject.transform.position);
     }
 
-    public Vector3 GetTargetUIScreenPosition(string targetId)
-    {
-        HiddenObjectBandar target = FindObjectByCategory(targetId);
-        return GetTargetUIScreenPosition(target);
-    }
+    public Vector3 GetTargetUIScreenPosition(string targetId) { return GetTargetUIScreenPosition(FindObjectByCategory(targetId)); }
 
     public Vector3 GetTargetUIScreenPosition(string targetId, Camera uiCamera)
     {
         RefreshReferences();
-
-        if (uiManager != null && !string.IsNullOrEmpty(targetId))
-            return uiManager.GetObjectUIScreenPosition(targetId, uiCamera);
-
+        if (uiManager != null && !string.IsNullOrEmpty(targetId)) return uiManager.GetObjectUIScreenPosition(targetId, uiCamera);
         HiddenObjectBandar target = FindObjectByCategory(targetId);
-
         if (target == null) return Vector3.zero;
         if (mainCamera == null) mainCamera = Camera.main;
         if (mainCamera == null) return target.transform.position;
-
         return mainCamera.WorldToScreenPoint(target.transform.position);
     }
 
     public Vector3 GetTargetUIScreenPosition(HiddenObjectBandar hiddenObject, Camera uiCamera)
     {
         if (hiddenObject == null) return Vector3.zero;
-
-        if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId))
-            return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, uiCamera);
-
+        if (uiManager != null && !string.IsNullOrEmpty(hiddenObject.CategoryId)) return uiManager.GetObjectUIScreenPosition(hiddenObject.CategoryId, uiCamera);
         if (mainCamera == null) mainCamera = Camera.main;
         if (mainCamera == null) return hiddenObject.transform.position;
-
         return mainCamera.WorldToScreenPoint(hiddenObject.transform.position);
     }
 
-    // --- FOCUS HINT ---
     public bool UseFocusHint()
     {
         RefreshReferences();
@@ -287,14 +255,10 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
         if (target == null) return false;
 
-        // FIXED: Uses your Camera Controller so it doesn't snap!
-        if (cameraController != null)
-            cameraController.FocusOnWorldPosition(target.transform.position);
+        if (cameraController != null) cameraController.FocusOnWorldPosition(target.transform.position);
         
-        if (hintMarkerUI != null)
-            hintMarkerUI.ShowOnTarget(target.transform, focusHintMarkerDuration);
-        else
-            target.PlayHint();
+        if (hintMarkerUI != null) hintMarkerUI.ShowOnTarget(target.transform, focusHintMarkerDuration);
+        else target.PlayHint();
 
         if (uiManager != null && !string.IsNullOrEmpty(target.CategoryId))
             StartCoroutine(uiManager.CenterObjectUISmooth(target.CategoryId));
@@ -302,42 +266,87 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
         return true;
     }
 
-    // --- MAGNET HINT ---
-    public bool UseMagnetHint()
+    public void StartMagnetTargeting(PowerUpLimitBandar uiController)
     {
-        RefreshReferences();
+        currentPowerUpUI = uiController;
 
-        // Get the target(s) based on your original logic
-        HiddenObjectBandar[] targets = GetUnfoundObjects(magnetPullCount);
+        if (popup1Instruction != null) popup1Instruction.SetActive(true);
+        if (popup2Confirm != null) popup2Confirm.SetActive(false);
+        if (ringPreviewGraphic != null) ringPreviewGraphic.SetActive(false);
+    }
 
-        if (targets.Length == 0)
+    public void OnPopup1OKClicked()
+    {
+        if (popup1Instruction != null) popup1Instruction.SetActive(false);
+        
+        isTargetingMode = true;
+        isConfirmingLocation = false;
+
+        if (wrongClickDetector != null) wrongClickDetector.IsPaused = true;
+    }
+
+    public void OnPopup2TidakClicked()
+    {
+        isConfirmingLocation = false; 
+        if (popup2Confirm != null) popup2Confirm.SetActive(false);
+        if (ringPreviewGraphic != null) ringPreviewGraphic.SetActive(false);
+    }
+
+    public void OnPopup2YaClicked()
+    {
+        isTargetingMode = false;
+        isConfirmingLocation = false;
+
+        if (popup2Confirm != null) popup2Confirm.SetActive(false);
+        if (ringPreviewGraphic != null) ringPreviewGraphic.SetActive(false);
+
+        if (wrongClickDetector != null) wrongClickDetector.IsPaused = false;
+
+        if (currentPowerUpUI != null) currentPowerUpUI.DeductMagnetCurrency();
+
+        ExecuteRadiusMagnet();
+    }
+
+    private void ExecuteRadiusMagnet()
+    {
+        List<HiddenObjectBandar> itemsInRadius = new List<HiddenObjectBandar>();
+
+        foreach (var obj in allObjects)
         {
-            AutoRegisterSceneObjects();
-            targets = GetUnfoundObjects(magnetPullCount);
+            if (obj == null || foundObjects.Contains(obj) || !obj.gameObject.activeInHierarchy || obj.IsFound) continue;
+
+            float distance = Vector2.Distance(selectedWorldTargetPos, obj.transform.position);
+            if (distance <= magnetRadius)
+            {
+                itemsInRadius.Add(obj);
+            }
         }
 
-        if (targets.Length == 0) return false;
-
-        // Pan to the first target before pulling
-        if (cameraController != null && targets[0] != null)
+        int count = Mathf.Min(magnetPullMaxCount, itemsInRadius.Count);
+        HiddenObjectBandar[] targetsToPull = new HiddenObjectBandar[count];
+        
+        for (int i = 0; i < count; i++) 
         {
-            cameraController.FocusOnWorldPosition(targets[0].transform.position);
+            targetsToPull[i] = itemsInRadius[i];
         }
 
-        StartCoroutine(MagnetRoutine(targets));
-        return true;
+        if (targetsToPull.Length > 0)
+        {
+            StartCoroutine(MagnetRoutine(targetsToPull));
+        }
+        else
+        {
+            Debug.Log("[Magnet] Gambled and lost! No items inside the ring.");
+        }
     }
 
     private IEnumerator MagnetRoutine(HiddenObjectBandar[] targets)
     {
         int totalTargets = targets.Length;
 
-        yield return new WaitForSeconds(0.4f); 
-
         for (int i = 0; i < targets.Length; i++)
         {
             HiddenObjectBandar target = targets[i];
-
             if (target == null) continue;
 
             if (target.BeginMagnetSelection())
@@ -345,7 +354,6 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
                 yield return target.PlayMagnetMoveToCenter(i, totalTargets);
                 yield return target.PlayMagnetMoveToUI();
             }
-
             yield return new WaitForSeconds(magnetDelayBetweenObjects);
         }
     }
@@ -359,20 +367,6 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
             return obj;
         }
         return null;
-    }
-
-    private HiddenObjectBandar[] GetUnfoundObjects(int count)
-    {
-        List<HiddenObjectBandar> result = new List<HiddenObjectBandar>();
-        for (int i = 0; i < allObjects.Count; i++)
-        {
-            HiddenObjectBandar obj = allObjects[i];
-            if (obj == null || foundObjects.Contains(obj) || !obj.gameObject.activeInHierarchy || obj.IsFound) continue;
-            
-            result.Add(obj);
-            if (result.Count >= count) break;
-        }
-        return result.ToArray();
     }
 
     private HiddenObjectBandar FindObjectByCategory(string categoryId)
@@ -407,14 +401,6 @@ public class ManagerHiddenObjectBandar : MonoBehaviour
 
     private void TriggerLevelComplete()
     {
-        if (levelCompleteManager != null)
-        {
-            Debug.Log("[ManagerBandar] Calling ShowLevelComplete() on the LevelCompleteManager now!");
-            levelCompleteManager.ShowLevelComplete();
-        }
-        else
-        {
-            Debug.LogError("[ManagerBandar] FATAL ERROR: LevelCompleteManager slot is empty! Cannot show Win Panel.");
-        }
+        if (levelCompleteManager != null) levelCompleteManager.ShowLevelComplete();
     }
 }

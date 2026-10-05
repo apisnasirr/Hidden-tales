@@ -6,8 +6,7 @@ public class PowerUpLimitUIBengkel : MonoBehaviour
 {
     [Header("Managers")]
     [SerializeField] private ManagerHiddenObjectBengkel manager;
-    [SerializeField] private GameTimerManager timerManager; // Handles the Freeze Time
-
+    [SerializeField] private GameTimerManager timerManager; 
     [Header("Shop Item IDs")]
     [SerializeField] private string focusHintItemId = "focus_hint";
     [SerializeField] private string magnetHintItemId = "magnet_hint";
@@ -29,7 +28,7 @@ public class PowerUpLimitUIBengkel : MonoBehaviour
     [SerializeField] private Image freezeTimeIcon;
 
     [Header("Settings")]
-    [SerializeField] private float freezeDuration = 10f; // 10 seconds of frozen time
+    [SerializeField] private float freezeDuration = 10f; 
     [SerializeField] private Color activeColor = Color.white;
     [SerializeField] private Color disabledColor = Color.gray;
 
@@ -87,9 +86,11 @@ public class PowerUpLimitUIBengkel : MonoBehaviour
         int currentAmount = CurrencyManager.Instance.GetItemAmount(magnetHintItemId);
         if (currentAmount <= 0) return;
 
-        bool success = manager.UseMagnetHint(); 
-        if (!success) return;
+        manager.StartMagnetTargeting(this); 
+    }
 
+    public void DeductMagnetCurrency()
+    {
         CurrencyManager.Instance.UseItem(magnetHintItemId, 1);
         RefreshUI();
     }

@@ -87,9 +87,11 @@ public class PowerUpLimitUIRuncit : MonoBehaviour
         int currentAmount = CurrencyManager.Instance.GetItemAmount(magnetHintItemId);
         if (currentAmount <= 0) return;
 
-        bool success = manager.UseMagnetHint(); 
-        if (!success) return;
+        manager.StartMagnetTargeting(this); 
+    }
 
+    public void DeductMagnetCurrency()
+    {
         CurrencyManager.Instance.UseItem(magnetHintItemId, 1);
         RefreshUI();
     }

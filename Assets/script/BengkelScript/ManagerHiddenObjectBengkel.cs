@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using DG.Tweening; 
 
@@ -33,9 +34,15 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
     [Header("Focus Hint")]
     [SerializeField] private float focusHintMarkerDuration = 1.5f;
 
-    [Header("Magnet Hint")]
-    [SerializeField] private int magnetPullCount = 1; 
+    [Header("Magnet: Risk/Reward Settings")]
+    [SerializeField] private int magnetPullMaxCount = 3; 
     [SerializeField] private float magnetDelayBetweenObjects = 0.08f;
+    [SerializeField] private float magnetRadius = 3f; 
+    
+    [Header("Magnet: UI References")]
+    [SerializeField] private GameObject popup1Instruction;
+    [SerializeField] private GameObject popup2Confirm;
+    [SerializeField] private GameObject ringPreviewGraphic;
 
     private readonly List<HiddenObjectBengkel> allObjects = new List<HiddenObjectBengkel>();
     private readonly HashSet<HiddenObjectBengkel> foundObjects = new HashSet<HiddenObjectBengkel>();
@@ -52,6 +59,11 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
     private bool savedScrollHorizontal = true;
     private bool savedScrollVertical = true;
     private bool savedScrollInertia = true;
+
+    private bool isTargetingMode = false;
+    private bool isConfirmingLocation = false;
+    private Vector3 selectedWorldTargetPos;
+    private PowerUpLimitUIBengkel currentPowerUpUI;
 
     private void Awake()
     {
@@ -74,6 +86,34 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
         yield return null;
         RefreshReferences();
         AutoRegisterSceneObjects();
+
+        if (popup1Instruction != null) popup1Instruction.SetActive(false);
+        if (popup2Confirm != null) popup2Confirm.SetActive(false);
+        if (ringPreviewGraphic != null) ringPreviewGraphic.SetActive(false);
+    }
+
+    private void Update()
+    {
+        if (isTargetingMode && !isConfirmingLocation)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+
+                Vector3 mousePos = Input.mousePosition;
+                selectedWorldTargetPos = mainCamera.ScreenToWorldPoint(mousePos);
+                selectedWorldTargetPos.z = 0; 
+
+                if (ringPreviewGraphic != null)
+                {
+                    ringPreviewGraphic.transform.position = selectedWorldTargetPos;
+                    ringPreviewGraphic.SetActive(true);
+                }
+
+                isConfirmingLocation = true;
+                if (popup2Confirm != null) popup2Confirm.SetActive(true);
+            }
+        }
     }
 
     private void LateUpdate()
@@ -362,32 +402,83 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
         return true;
     }
 
-    public bool UseMagnetHint()
+    public void StartMagnetTargeting(PowerUpLimitUIBengkel uiController)
     {
-        RefreshReferences();
-        HiddenObjectBengkel[] targets = GetUnfoundObjects(magnetPullCount);
+        currentPowerUpUI = uiController;
 
-        if (targets == null || targets.Length == 0)
+        if (popup1Instruction != null) popup1Instruction.SetActive(true);
+        if (popup2Confirm != null) popup2Confirm.SetActive(false);
+        if (ringPreviewGraphic != null) ringPreviewGraphic.SetActive(false);
+    }
+
+    public void OnPopup1OKClicked()
+    {
+        if (popup1Instruction != null) popup1Instruction.SetActive(false);
+        
+        isTargetingMode = true;
+        isConfirmingLocation = false;
+
+        if (wrongClickDetector != null) wrongClickDetector.IsPaused = true;
+    }
+
+    public void OnPopup2TidakClicked()
+    {
+        isConfirmingLocation = false;
+        if (popup2Confirm != null) popup2Confirm.SetActive(false);
+        if (ringPreviewGraphic != null) ringPreviewGraphic.SetActive(false);
+    }
+
+    public void OnPopup2YaClicked()
+    {
+        isTargetingMode = false;
+        isConfirmingLocation = false;
+
+        if (popup2Confirm != null) popup2Confirm.SetActive(false);
+        if (ringPreviewGraphic != null) ringPreviewGraphic.SetActive(false);
+
+        if (wrongClickDetector != null) wrongClickDetector.IsPaused = false;
+
+        if (currentPowerUpUI != null) currentPowerUpUI.DeductMagnetCurrency();
+
+        ExecuteRadiusMagnet();
+    }
+
+    private void ExecuteRadiusMagnet()
+    {
+        List<HiddenObjectBengkel> itemsInRadius = new List<HiddenObjectBengkel>();
+
+        foreach (var obj in allObjects)
         {
-            AutoRegisterSceneObjects();
-            targets = GetUnfoundObjects(magnetPullCount);
+            if (obj == null || foundObjects.Contains(obj) || !obj.gameObject.activeInHierarchy || obj.IsFound) continue;
+
+            float distance = Vector2.Distance(selectedWorldTargetPos, obj.transform.position);
+            if (distance <= magnetRadius)
+            {
+                itemsInRadius.Add(obj);
+            }
         }
 
-        if (targets == null || targets.Length == 0) return false;
-
-        if (cameraController != null && targets[0] != null)
+        int count = Mathf.Min(magnetPullMaxCount, itemsInRadius.Count);
+        HiddenObjectBengkel[] targetsToPull = new HiddenObjectBengkel[count];
+        
+        for (int i = 0; i < count; i++) 
         {
-            cameraController.FocusOnWorldPosition(targets[0].transform.position);
+            targetsToPull[i] = itemsInRadius[i];
         }
 
-        StartCoroutine(MagnetRoutine(targets));
-        return true;
+        if (targetsToPull.Length > 0)
+        {
+            StartCoroutine(MagnetRoutine(targetsToPull));
+        }
+        else
+        {
+            Debug.Log("[Magnet] Gambled and lost! No items inside the ring.");
+        }
     }
 
     private IEnumerator MagnetRoutine(HiddenObjectBengkel[] targets)
     {
         int totalTargets = targets.Length;
-        yield return new WaitForSeconds(0.4f); 
 
         for (int i = 0; i < targets.Length; i++)
         {
@@ -413,20 +504,6 @@ public class ManagerHiddenObjectBengkel : MonoBehaviour
             return obj;
         }
         return null;
-    }
-
-    private HiddenObjectBengkel[] GetUnfoundObjects(int count)
-    {
-        List<HiddenObjectBengkel> result = new List<HiddenObjectBengkel>();
-        for (int i = 0; i < allObjects.Count; i++)
-        {
-            HiddenObjectBengkel obj = allObjects[i];
-            if (obj == null || foundObjects.Contains(obj) || !obj.gameObject.activeInHierarchy || obj.IsFound) continue;
-            
-            result.Add(obj);
-            if (result.Count >= count) break;
-        }
-        return result.ToArray();
     }
 
     private HiddenObjectBengkel FindObjectByCategory(string categoryId)

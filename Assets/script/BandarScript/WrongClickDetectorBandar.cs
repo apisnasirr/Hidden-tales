@@ -11,6 +11,8 @@ public class WrongClickDetectorBandar : MonoBehaviour
     [Header("Click Settings")]
     [SerializeField] private float dragThreshold = 20f;
 
+    [HideInInspector] public bool IsPaused = false; 
+
     private bool validClickThisFrame = false;
     private Vector2 mouseDownPosition;
     private bool isPointerDown = false;
@@ -36,9 +38,7 @@ public class WrongClickDetectorBandar : MonoBehaviour
 
         if (Input.GetMouseButtonUp(0))
         {
-            if (!isPointerDown)
-                return;
-
+            if (!isPointerDown) return;
             isPointerDown = false;
 
             Vector2 mouseUpPosition = Input.mousePosition;
@@ -68,6 +68,8 @@ public class WrongClickDetectorBandar : MonoBehaviour
 
     private void CheckClick(Vector2 mouseScreenPos)
     {
+        if (IsPaused) return; 
+
         if (mainCamera == null)
             mainCamera = Camera.main;
 
@@ -78,11 +80,8 @@ public class WrongClickDetectorBandar : MonoBehaviour
 
         if (hit2D != null)
         {
-            if (IsHiddenCharacter(hit2D.gameObject))
-                return;
-
-            if (hit2D.CompareTag("CorrectObject"))
-                return;
+            if (IsHiddenCharacter(hit2D.gameObject)) return;
+            if (hit2D.CompareTag("CorrectObject")) return;
 
             DeductLife(mouseScreenPos);
             return;
@@ -91,11 +90,8 @@ public class WrongClickDetectorBandar : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(mouseScreenPos);
         if (Physics.Raycast(ray, out RaycastHit hit3D))
         {
-            if (IsHiddenCharacter(hit3D.collider.gameObject))
-                return;
-
-            if (hit3D.collider.CompareTag("CorrectObject"))
-                return;
+            if (IsHiddenCharacter(hit3D.collider.gameObject)) return;
+            if (hit3D.collider.CompareTag("CorrectObject")) return;
 
             DeductLife(mouseScreenPos);
             return;
@@ -106,30 +102,17 @@ public class WrongClickDetectorBandar : MonoBehaviour
 
     private bool IsHiddenCharacter(GameObject obj)
     {
-        if (obj.CompareTag("HiddenCharacter"))
-            return true;
-
-        if (obj.GetComponent<HiddenCharacterSequence>() != null)
-            return true;
-
-        if (obj.GetComponent<HiddenCharacterReward>() != null)
-            return true;
-
-        if (obj.GetComponent<HiddenCharacterController>() != null)
-            return true;
-
+        if (obj.CompareTag("HiddenCharacter")) return true;
+        if (obj.GetComponent<HiddenCharacterSequence>() != null) return true;
+        if (obj.GetComponent<HiddenCharacterReward>() != null) return true;
+        if (obj.GetComponent<HiddenCharacterController>() != null) return true;
         return false;
     }
 
     private void DeductLife(Vector2 clickScreenPos)
     {
-        if (lifeManager != null)
-            lifeManager.LoseLife();
-
-        if (wrongClickMarkUI != null)
-            wrongClickMarkUI.ShowAtScreenPosition(clickScreenPos);
-
-        if (SFXManager.Instance != null)
-            SFXManager.Instance.PlayWrongClick();
+        if (lifeManager != null) lifeManager.LoseLife();
+        if (wrongClickMarkUI != null) wrongClickMarkUI.ShowAtScreenPosition(clickScreenPos);
+        if (SFXManager.Instance != null) SFXManager.Instance.PlayWrongClick();
     }
 }
